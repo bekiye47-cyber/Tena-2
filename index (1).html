@@ -1,0 +1,3103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tena Holistic Services</title>
+  
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+            }
+          },
+          animation: {
+            'bounce-subtle': 'bounce 2s infinite',
+            'fade-in': 'fadeIn 0.25s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(6px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Canvas Confetti Library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      background-color: #f1f5f9;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    @keyframes floatCrown {
+      0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+      50% { transform: translateY(-8px) rotate(4deg) scale(1.15); }
+    }
+    @keyframes goldGlow {
+      0%, 100% { box-shadow: 0 0 18px 2px rgba(245, 158, 11, 0.6), 0 0 35px 4px rgba(251, 191, 36, 0.3); }
+      50% { box-shadow: 0 0 28px 6px rgba(245, 158, 11, 0.95), 0 0 50px 10px rgba(251, 191, 36, 0.6); }
+    }
+    @keyframes silverGlow {
+      0%, 100% { box-shadow: 0 0 14px 2px rgba(148, 163, 184, 0.5), 0 0 25px 3px rgba(226, 232, 240, 0.3); }
+      50% { box-shadow: 0 0 22px 4px rgba(148, 163, 184, 0.85), 0 0 38px 6px rgba(226, 232, 240, 0.5); }
+    }
+    @keyframes bronzeGlow {
+      0%, 100% { box-shadow: 0 0 14px 2px rgba(234, 88, 12, 0.5), 0 0 25px 3px rgba(251, 146, 60, 0.3); }
+      50% { box-shadow: 0 0 22px 4px rgba(234, 88, 12, 0.85), 0 0 38px 6px rgba(251, 146, 60, 0.5); }
+    }
+    @keyframes rotateSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes shimmerBar {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(250%); }
+    }
+    @keyframes pulseSparkle {
+      0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
+      50% { opacity: 1; transform: scale(1.3) rotate(45deg); }
+    }
+
+    .crown-animated {
+      animation: floatCrown 2.5s ease-in-out infinite;
+    }
+    .gold-aura {
+      animation: goldGlow 2.5s ease-in-out infinite;
+    }
+    .silver-aura {
+      animation: silverGlow 3s ease-in-out infinite;
+    }
+    .bronze-aura {
+      animation: bronzeGlow 3s ease-in-out infinite;
+    }
+    .spin-ring {
+      animation: rotateSpin 6s linear infinite;
+    }
+    .sparkle-effect {
+      animation: pulseSparkle 2s ease-in-out infinite;
+    }
+    
+    .pedestal-gold {
+      height: 120px;
+      background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 35%, #d97706 70%, #92400e 100%);
+      box-shadow: 0 12px 30px -4px rgba(217, 119, 6, 0.55), inset 0 2px 8px rgba(255, 255, 255, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+    .pedestal-silver {
+      height: 96px;
+      background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 35%, #94a3b8 70%, #475569 100%);
+      box-shadow: 0 10px 25px -4px rgba(148, 163, 184, 0.5), inset 0 2px 8px rgba(255, 255, 255, 0.7);
+      position: relative;
+      overflow: hidden;
+    }
+    .pedestal-bronze {
+      height: 80px;
+      background: linear-gradient(180deg, #fdba74 0%, #fb923c 35%, #ea580c 70%, #9a3412 100%);
+      box-shadow: 0 10px 25px -4px rgba(234, 88, 12, 0.5), inset 0 2px 8px rgba(255, 255, 255, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+    .shimmer-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 45%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      animation: shimmerBar 3s infinite;
+      pointer-events: none;
+    }
+
+    /* LEVEL UP ANIMATIONS & KEYFRAMES */
+    @keyframes levelUpPop {
+      0% {
+        opacity: 0;
+        transform: scale(0.6) translateY(35px);
+      }
+      60% {
+        opacity: 1;
+        transform: scale(1.05) translateY(-6px);
+      }
+      80% {
+        transform: scale(0.97) translateY(2px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes rankBadgeGlowPulse {
+      0%, 100% {
+        box-shadow: 0 0 16px 3px rgba(20, 184, 166, 0.4), 0 0 35px 6px rgba(245, 158, 11, 0.35);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 32px 8px rgba(20, 184, 166, 0.8), 0 0 60px 15px rgba(245, 158, 11, 0.65);
+        transform: scale(1.08);
+      }
+    }
+
+    @keyframes levelUpRaySpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes badgeUpgradeFlip {
+      0% { transform: rotateY(90deg) scale(0.7); opacity: 0; }
+      100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+    }
+
+    @keyframes ribbonPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    @keyframes floatStarParticle {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-35px) rotate(140deg); opacity: 0; }
+    }
+
+    .level-up-modal-card {
+      animation: levelUpPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .rank-glow-badge {
+      animation: rankBadgeGlowPulse 2.2s infinite ease-in-out;
+    }
+    .level-up-ray {
+      animation: levelUpRaySpin 15s linear infinite;
+    }
+    .badge-flip-in {
+      animation: badgeUpgradeFlip 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
+    }
+    .ribbon-glow {
+      animation: ribbonPulse 1.8s ease-in-out infinite;
+    }
+    .floating-star-anim {
+      animation: floatStarParticle 1.6s ease-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+    const ADMIN_CONFIG = {
+      adminUsernames: ["YourTelegramUsername", "admin"],
+      masterPin: "7788"
+    };
+
+    const TRANSLATIONS = {
+      en: {
+        appName: "Tena Holistic",
+        tracker: "Tracker",
+        challenges: "Challenges",
+        hub: "Health Hub",
+        store: "Store",
+        profile: "Profile",
+        welcome: "Welcome",
+        dailyReset: "Resets every 24 hours",
+        todayStreak: "Streak",
+        todayHabits: "Today's Curated Habits",
+        done: "Done",
+        weeklyChallenge: "Monthly Wellness Challenge",
+        challengeWhy: "Why this challenge?",
+        week: "Week",
+        lockedWeek: "Locked until",
+        pastWeek: "Completed Week",
+        activeWeekBadge: "Active This Week",
+        guidesTitle: "Health & Wellness Guides",
+        guidesSub: "Watch full videos on YouTube or read concise guides.",
+        watchYoutube: "Watch Video",
+        readGuide: "Read Guide",
+        orderBtn: "Order",
+        wallet: "Wallet & Balances",
+        topUp: "+ Top Up ETB",
+        starsBalance: "Wellness Stars",
+        settings: "Settings",
+        darkMode: "Dark Theme",
+        language: "Language (ቋንቋ)",
+        viewLeaderboard: "🏆 View Community Leaderboard",
+        leaderboardSub: "See top achievers & full rankings",
+        leaderboard: "Leaderboard",
+        leaderboardNav: "Ranks",
+        ranksTab: "🏆 Community Ranks",
+        challengesTab: "📅 7-Day Challenges",
+        searchRanked: "Search player by name or @username...",
+        allTime: "All-Time",
+        backToProfile: "← Back to Profile",
+        daily: "Daily",
+        weekly: "Weekly",
+        monthly: "All-Time",
+        searchPlaceholder: "Search topics, remedies, foods...",
+        close: "Close",
+        pendingDeposits: "Pending Deposit Requests",
+        copied: "Copied! ✓",
+        redeemTitle: "🎁 Redeem Top-Up Voucher",
+        redeemBtn: "Apply",
+        allHabitsCelebration: "🎉 Outstanding! All habits completed today!",
+        allHabitsSub: "Your daily streak is active and your stars are boosted.",
+        liveSync: "Live Synced",
+        syncing: "Syncing...",
+        refreshLeaderboard: "Refresh Rank",
+        activeCommunity: "Active Community",
+        liveIndicator: "LIVE",
+        levelUpTitle: "LEVEL UP!",
+        levelUpSub: "Congratulations! You reached a new rank tier.",
+        newTierUnlocked: "NEW TIER UNLOCKED",
+        tierBenefitsTitle: "Tier Rewards & Status",
+        benefit1: "Upgraded Community Badge",
+        benefit2: "Climbed higher on Global Leaderboard",
+        benefit3: "Next Milestone:",
+        claimReward: "Claim & Continue 🚀",
+        testLevelUp: "⚡ Test Level Up Animation"
+      },
+      am: {
+        appName: "ጤና ሆሊስቲክ",
+        tracker: "መከታተያ",
+        challenges: "ተግዳሮቶች",
+        hub: "የጤና መረጃ",
+        store: "ሱቅ",
+        profile: "መገለጫ",
+        welcome: "እንኳን ደህና መጡ",
+        dailyReset: "በየ 24 ሰዓቱ ይታደሳል",
+        todayStreak: "ቀጣይነት",
+        todayHabits: "የዛሬ ጤናማ ልማዶች",
+        done: "ተጠናቋል",
+        weeklyChallenge: "የወሩ የጤና ተግዳሮት",
+        challengeWhy: "የዚህ ተግዳሮት ጥቅም ምንድን ነው?",
+        week: "ሳምንት",
+        lockedWeek: "እስከሚደርስ ተዘግቷል",
+        pastWeek: "ያለፈ ሳምንት",
+        activeWeekBadge: "የዚህ ሳምንት ተግዳሮት",
+        guidesTitle: "የጤና እና የህክምና መመሪያዎች",
+        guidesSub: "ሙሉ ቪዲዮዎችን በዩቲዩብ ይመልከቱ ወይም መመሪያዎችን ያንብቡ።",
+        watchYoutube: "ቪዲዮ ይመልከቱ",
+        readGuide: "መመሪያውን አንብብ",
+        orderBtn: "እዘዝ",
+        wallet: "ዋሌት እና ሂሳብ",
+        topUp: "+ ብር አስገባ (Top Up)",
+        starsBalance: "የጤና ኮከቦች",
+        settings: "ቅንብሮች",
+        darkMode: "ጨለማ ሁነታ",
+        language: "ቋንቋ (Language)",
+        viewLeaderboard: "🏆 የማህበረሰብ ደረጃ ሰሌዳን ተመልከት",
+        leaderboardSub: "ከፍተኛ አሸናፊዎችን እና ሙሉ ደረጃዎችን ይመልከቱ",
+        leaderboard: "የደረጃ ሰሌዳ",
+        leaderboardNav: "ደረጃዎች",
+        ranksTab: "🏆 የማህበረሰብ ደረጃዎች",
+        challengesTab: "📅 ሳምንታዊ ተግዳሮቶች",
+        searchRanked: "ተጫዋቾችን ወይም @username ፈልግ...",
+        allTime: "ጠቅላላ",
+        backToProfile: "← ወደ መገለጫ ተመለስ",
+        daily: "ዕለታዊ",
+        weekly: "ሳምንታዊ",
+        monthly: "ጠቅላላ",
+        searchPlaceholder: "ህመሞችን፣ ምግቦችን፣ መፍትሄዎችን ፈልግ...",
+        close: "ዝጋ",
+        pendingDeposits: "በማረጋገጥ ላይ ያሉ የገንዘብ ጥያቄዎች",
+        copied: "ተቀድቷል! ✓",
+        redeemTitle: "🎁 የገንዘብ ኩፖን / ቫውቸር ማስገቢያ",
+        redeemBtn: "ተግብር",
+        allHabitsCelebration: "🎉 ድንቅ ስራ! የዛሬው ሁሉም ጤናማ ልማዶች ተጠናቀዋል!",
+        allHabitsSub: "ዕለታዊ ቀጣይነትዎ (Streak) ነቅቷል፣ ኮከቦችዎም ጨምረዋል።",
+        liveSync: "የቀጥታ ደረጃ ተመሳስሏል",
+        syncing: "በማመሳሰል ላይ...",
+        refreshLeaderboard: "ደረጃዎችን አድስ",
+        activeCommunity: "ንቁ ማህበረሰብ",
+        liveIndicator: "ቀጥታ",
+        levelUpTitle: "የደረጃ እድገት! 🎉",
+        levelUpSub: "እንኳን ደስ አለዎት! አዲስ የጤና ደረጃ ላይ ደርሰዋል።",
+        newTierUnlocked: "አዲስ የደረጃ ባጅ ተከፍቷል",
+        tierBenefitsTitle: "የደረጃ ጥቅሞች",
+        benefit1: "የማህበረሰብ ደረጃ ሰሌዳ ባጅ",
+        benefit2: "በደረጃ ሰንጠረዥ ላይ ከፍ ብለዋል",
+        benefit3: "ቀጣይ ግብ:",
+        claimReward: "ተቀበልና ቀጥል 🚀",
+        testLevelUp: "⚡ የደረጃ እድገትን ሞክር"
+      }
+    };
+
+    const HEALTH_CATEGORIES = ["All", "Cancer Care", "Diabetes", "Weight Loss", "Heart Health", "Herbs & Nutrition"];
+
+    const HEALTH_ARTICLES = [
+      {
+        id: "1",
+        category: "Cancer Care",
+        title: "Anti-Inflammatory Nutrition & Cellular Defense",
+        snippet: "Antioxidant-rich Ethiopian herbs, garlic, ginger, and habits to reduce systemic inflammation.",
+        youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80",
+        readTime: "5 min",
+        content: `
+### Holistic Anti-Inflammatory Principles
+1. **Antioxidant Superfoods**: Incorporate fresh ginger, turmeric, moringa, and raw garlic into your weekly meals.
+2. **Eliminate Ultra-Processed Foods**: Avoid refined seed oils, artificial sweeteners, and excess sugars.
+3. **Gut Health**: Fermented foods nourish gut bacteria, which govern over 70% of the immune system.
+        `
+      },
+      {
+        id: "2",
+        category: "Diabetes",
+        title: "Natural Blood Sugar Stabilization & Insulin Health",
+        snippet: "How whole grains like Teff, fiber, and intermittent fasting prevent insulin spikes.",
+        youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=600&auto=format&fit=crop&q=80",
+        readTime: "4 min",
+        content: `
+### Managing Insulin Sensitivity Naturally
+1. **Low Glycemic Whole Grains**: Teff and legumes release carbohydrates slowly, preventing insulin spikes.
+2. **Cinnamon & Fenugreek (Abish)**: Traditional herbal remedies that aid glucose uptake into cells.
+3. **Post-Meal Walking**: A 15-minute walk right after meals helps muscles absorb glucose naturally.
+        `
+      }
+    ];
+
+    const STORE_PRODUCTS = [
+      {
+        id: "p1",
+        title: "Organic Moringa Powder (250g)",
+        price: "450 ETB",
+        category: "Herbs & Nutrition",
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80",
+        description: "Pure powdered moringa leaves rich in iron, antioxidants, and essential vitamins."
+      },
+      {
+        id: "p2",
+        title: "Pure Raw Unfiltered Honey (500g)",
+        price: "650 ETB",
+        category: "Herbs & Nutrition",
+        image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&auto=format&fit=crop&q=80",
+        description: "100% natural raw honey with powerful antimicrobial and throat-soothing benefits."
+      }
+    ];
+
+    const DIGITAL_BOOKS = [
+      {
+        id: "b1",
+        title: "Holistic Cancer Prevention & Cellular Health Handbook",
+        category: "Cancer Care",
+        cover: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80",
+        etbPrice: 200,
+        starPrice: 300,
+        chapters: [
+          { title: "Chapter 1: The Biology of Cellular Repair", text: "Chronic stress and poor nutrition damage cell membranes. By adopting anti-inflammatory foods..." },
+          { title: "Chapter 2: Essential Ethiopian Herbs & Roots", text: "Moringa, ginger, turmeric, and garlic have been used for centuries to support cellular longevity..." }
+        ]
+      }
+    ];
+
+    const DEFAULT_HABITS = [
+      { id: 1, text: "30-min brisk movement or stretch", amText: "30 ደቂቃ የእግር ጉዞ ወይም እንቅስቃሴ", xp: 15, icon: "🏃" },
+      { id: 2, text: "Drink Tena herbal infusion tea", amText: "የጤና እፅዋት ሻይ መጠጣት", xp: 10, icon: "🍵" },
+      { id: 3, text: "Eat a fresh nutrient-dense meal", amText: "የተመጣጠነ እና ተፈጥሯዊ ምግብ መመገብ", xp: 15, icon: "🥗" },
+      { id: 4, text: "7–8 hours restful sleep", amText: "ከ 7-8 ሰዓታት ጥራት ያለው እንቅልፍ", xp: 20, icon: "🌙" }
+    ];
+
+    const MONTH_CHALLENGES = [
+      {
+        week: 1,
+        dayRange: "Days 1–7",
+        title: "Intermittent Fasting & Light Breakfast",
+        amTitle: "የጠዋት ቀላል ጾም እና የቁርስ ማስተካከያ",
+        motivation: "Allowing your digestive system an extended rest in the morning balances insulin and activates cellular cleansing.",
+        amMotivation: "የምግብ መፍጫ ስርአትን በጠዋት ማሳረፍ የደም ስኳርን ለማስተካከል እና የሰውነት ህዋሳትን ለማደስ ይረዳል።",
+        days: ["12-hour gentle fast", "Warm lemon water", "14-hour fast window", "High-protein lunch", "No late snacking", "14-hour clean fast", "Week 1 Reflection"]
+      },
+      {
+        week: 2,
+        dayRange: "Days 8–14",
+        title: "Daily Movement & Walking Challenge",
+        amTitle: "ዕለታዊ የእግር ጉዞ እና እንቅስቃሴ",
+        motivation: "Walking is the most natural restorative human movement. It reduces stress hormones and protects cardiovascular health.",
+        amMotivation: "የእግር ጉዞ የጭንቀት ሆርሞኖችን በመቀነስ እና የልብ ጤናን በመጠበቅ ቀዳሚ የተፈጥሮ እንቅስቃሴ ነው።",
+        days: ["20-min morning walk", "Take the stairs", "Midday 15-min walk", "Post-dinner stroll", "Reach 8,000 steps", "Weekend outdoor walk", "10,000 steps victory"]
+      },
+      {
+        week: 3,
+        dayRange: "Days 15–21",
+        title: "Zero Refined Sugar & Herbal Detox",
+        amTitle: "ከስኳር ነጻ እና የእፅዋት ማጽጃ ሳምንት",
+        motivation: "Cutting refined sugar clears brain fog, boosts natural energy, and supports liver detoxification.",
+        amMotivation: "የተጣራ ስኳርን ማስወገድ አእምሮን ያነቃል፣ ድካምን ያስወግዳል እንዲሁም የጉበትን ጤና ይጠብቃል።",
+        days: ["Zero sugary sodas", "Raw honey tea only", "Check food labels", "Fresh fruit for cravings", "Moringa & ginger cup", "100% whole-food day", "Sugar-free achievement"]
+      },
+      {
+        week: 4,
+        dayRange: "Days 22–End",
+        title: "Restorative Sleep & Recovery Routine",
+        amTitle: "ጥራት ያለው እንቅልፍ እና እረፍት",
+        motivation: "Deep sleep is the cornerstone of immunity and hormone synthesis. Avoid bright screens 1 hour before bed.",
+        amMotivation: "ጥልቅ እንቅልፍ ለሰውነት በሽታ መከላከል አቅም እና ሆርሞን ማመጣጠን ወሳኝ መሰረት ነው።",
+        days: ["No screens 45m before bed", "Dark cool bedroom", "Chamomile tea", "Sleep before 11 PM", "8 hours sleep", "Morning sunlight exposure", "Monthly Challenge Master!"]
+      }
+    ];
+
+    const INITIAL_COMMUNITY_MEMBERS = [];
+
+    function UserAvatar({ src, name, size = "md", ringClass = "", className = "", fallbackEmoji = "🌱" }) {
+      const [hasError, setHasError] = useState(false);
+      
+      const sizeMap = {
+        xs: "w-6 h-6 text-[10px]",
+        sm: "w-8 h-8 text-xs",
+        md: "w-10 h-10 text-sm",
+        lg: "w-13 h-13 text-base",
+        xl: "w-16 h-16 text-xl",
+        podium1: "w-20 h-20 sm:w-22 sm:h-22 text-3xl",
+        podium2: "w-11 h-11 sm:w-12 sm:h-12 text-base",
+        podium3: "w-11 h-11 sm:w-12 sm:h-12 text-base"
+      };
+
+      const initials = (name || "U").replace(/\(You\)/i, '').trim().slice(0, 2).toUpperCase();
+
+      if (src && !hasError) {
+        return (
+          <div className={`relative rounded-full overflow-hidden shrink-0 ${sizeMap[size] || sizeMap.md} ${ringClass} ${className}`}>
+            <img
+              src={src}
+              alt={name || "User"}
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+              onError={() => setHasError(true)}
+            />
+          </div>
+        );
+      }
+
+      return (
+        <div className={`rounded-full bg-gradient-to-tr from-teal-500 via-emerald-500 to-teal-600 text-white flex items-center justify-center font-black shrink-0 ${sizeMap[size] || sizeMap.md} ${ringClass} ${className}`}>
+          {initials || fallbackEmoji}
+        </div>
+      );
+    }
+
+    function getRankInfo(stars) {
+      if (stars >= 1000) return { tierIndex: 7, name: "Diamond I", next: 1500, color: "from-cyan-400 to-teal-600", icon: "💎", title: "Diamond Master" };
+      if (stars >= 800) return { tierIndex: 6, name: "Gold III", next: 1000, color: "from-amber-400 to-yellow-500", icon: "🥇", title: "Gold Master" };
+      if (stars >= 600) return { tierIndex: 5, name: "Gold II", next: 800, color: "from-amber-400 to-yellow-500", icon: "🥇", title: "Gold Veteran" };
+      if (stars >= 450) return { tierIndex: 4, name: "Gold I", next: 600, color: "from-amber-300 to-amber-500", icon: "🥇", title: "Gold Adept" };
+      if (stars >= 300) return { tierIndex: 3, name: "Silver III", next: 450, color: "from-slate-300 to-slate-400", icon: "🥈", title: "Silver Elite" };
+      if (stars >= 180) return { tierIndex: 2, name: "Silver II", next: 300, color: "from-slate-300 to-slate-400", icon: "🥈", title: "Silver Explorer" };
+      return { tierIndex: 1, name: "Bronze I", next: 180, color: "from-amber-600 to-amber-800", icon: "🥉", title: "Bronze Starter" };
+    }
+
+    function getInitialTelegramProfile() {
+      let deviceUid = localStorage.getItem('tena_device_uid');
+      if (!deviceUid) {
+        deviceUid = 'user_' + Math.random().toString(36).substring(2, 9);
+        localStorage.setItem('tena_device_uid', deviceUid);
+      }
+
+      let uid = deviceUid;
+      let uname = "Friend";
+      let uusername = "";
+      let uphoto = null;
+
+      // 1. Direct window.Telegram.WebApp object
+      try {
+        if (window.Telegram?.WebApp) {
+          const tg = window.Telegram.WebApp;
+          tg.ready();
+          tg.expand();
+          if (tg.initDataUnsafe?.user?.id) {
+            uid = String(tg.initDataUnsafe.user.id);
+          }
+          if (tg.initDataUnsafe?.user?.first_name) {
+            uname = tg.initDataUnsafe.user.last_name
+              ? `${tg.initDataUnsafe.user.first_name} ${tg.initDataUnsafe.user.last_name}`
+              : tg.initDataUnsafe.user.first_name;
+          }
+          if (tg.initDataUnsafe?.user?.username) {
+            uusername = tg.initDataUnsafe.user.username;
+          }
+          if (tg.initDataUnsafe?.user?.photo_url) {
+            uphoto = tg.initDataUnsafe.user.photo_url;
+            localStorage.setItem(`tena_${uid}_photo`, uphoto);
+          }
+
+          // Also check raw initData if user was not parsed yet
+          if (uid === deviceUid && tg.initData) {
+            const params = new URLSearchParams(tg.initData);
+            const userStr = params.get('user');
+            if (userStr) {
+              const uObj = JSON.parse(userStr);
+              if (uObj.id) uid = String(uObj.id);
+              if (uObj.first_name) uname = uObj.last_name ? `${uObj.first_name} ${uObj.last_name}` : uObj.first_name;
+              if (uObj.username) uusername = uObj.username;
+              if (uObj.photo_url) {
+                uphoto = uObj.photo_url;
+                localStorage.setItem(`tena_${uid}_photo`, uphoto);
+              }
+            }
+          }
+        }
+      } catch(e) {}
+
+      // 2. Parse from window.location.hash or search (#tgWebAppData=...)
+      try {
+        const hashStr = window.location.hash ? window.location.hash.substring(1) : '';
+        const searchStr = window.location.search ? window.location.search.substring(1) : '';
+        const queryCombined = new URLSearchParams(hashStr || searchStr);
+        const tgWebAppData = queryCombined.get('tgWebAppData');
+        if (tgWebAppData) {
+          const subParams = new URLSearchParams(tgWebAppData);
+          const rawUser = subParams.get('user');
+          if (rawUser) {
+            const uObj = JSON.parse(rawUser);
+            if (uObj.id) uid = String(uObj.id);
+            if (uObj.first_name) uname = uObj.last_name ? `${uObj.first_name} ${uObj.last_name}` : uObj.first_name;
+            if (uObj.username) uusername = uObj.username;
+            if (uObj.photo_url) {
+              uphoto = uObj.photo_url;
+              localStorage.setItem(`tena_${uid}_photo`, uphoto);
+            }
+          }
+        }
+      } catch(e) {}
+
+      if (!uphoto) {
+        const savedPhoto = localStorage.getItem(`tena_${uid}_photo`);
+        if (savedPhoto) uphoto = savedPhoto;
+      }
+
+      return { uid, uname, uusername, uphoto };
+    }
+
+    function App() {
+      const [lang, setLang] = useState('en');
+      const [darkMode, setDarkMode] = useState(false);
+      const [activeTab, setActiveTab] = useState('tracker');
+      const [challengeSubTab, setChallengeSubTab] = useState('ranks'); // 'ranks' or 'challenges'
+      const [showLeaderboardView, setShowLeaderboardView] = useState(false);
+      const [leaderboardTimeframe, setLeaderboardTimeframe] = useState('daily');
+      const [leaderboardSearch, setLeaderboardSearch] = useState('');
+      
+      // Synchronous User Identity & Telegram Integration
+      const initProfile = useMemo(() => getInitialTelegramProfile(), []);
+      const [userId, setUserId] = useState(initProfile.uid);
+      const [userName, setUserName] = useState(initProfile.uname);
+      const [userUsername, setUserUsername] = useState(initProfile.uusername);
+      const [userPhoto, setUserPhoto] = useState(initProfile.uphoto);
+      const [isAdmin, setIsAdmin] = useState(ADMIN_CONFIG.adminUsernames.includes(initProfile.uusername));
+
+      // Shared Dynamic Community Leaderboard
+      const [communityList, setCommunityList] = useState([]);
+      const [isSyncingLeaderboard, setIsSyncingLeaderboard] = useState(false);
+      const [lastSyncTime, setLastSyncTime] = useState(new Date());
+      const [syncEngineMode, setSyncEngineMode] = useState("Connecting...");
+
+      // Modals
+      const [selectedArticle, setSelectedArticle] = useState(null);
+      const [selectedBook, setSelectedBook] = useState(null);
+      const [showTopUp, setShowTopUp] = useState(false);
+      const [showAdminPanel, setShowAdminPanel] = useState(false);
+      const [levelUpModal, setLevelUpModal] = useState(null);
+      const prevRankTierRef = useRef(null);
+      const isInitializedRef = useRef(false);
+
+      // Search & Filters
+      const [selectedCat, setSelectedCat] = useState("All");
+      const [searchQuery, setSearchQuery] = useState("");
+
+      // User Isolated State (Default is clean 0 for all new users)
+      const [userStars, setUserStars] = useState(0);
+      const [walletETB, setWalletETB] = useState(0);
+      const [unlockedBooks, setUnlockedBooks] = useState([]);
+      const [completedHabits, setCompletedHabits] = useState([]);
+      const [challengeProgress, setChallengeProgress] = useState({});
+      const [pendingDeposits, setPendingDeposits] = useState([]);
+      const [createdVouchers, setCreatedVouchers] = useState({});
+
+      // Redeem Voucher Input
+      const [voucherCodeInput, setVoucherCodeInput] = useState("");
+      const [voucherFeedback, setVoucherFeedback] = useState("");
+
+      // Top-Up Form State
+      const [topUpStep, setTopUpStep] = useState(1);
+      const [topUpAmount, setTopUpAmount] = useState("200");
+      const [selectedMethod, setSelectedMethod] = useState("telebirr");
+      const [txnReference, setTxnReference] = useState("");
+      const [copyNotice, setCopyNotice] = useState("");
+
+      // Admin Generator
+      const [adminGenAmount, setAdminGenAmount] = useState("200");
+      const [adminGenType, setAdminGenType] = useState("etb");
+      const [adminGeneratedCode, setAdminGeneratedCode] = useState("");
+
+      // Calendar Date Calculations
+      const today = new Date();
+      const currentDay = today.getDate();
+      const activeWeekNumber = Math.min(4, Math.ceil(currentDay / 7));
+      const [viewingWeek, setViewingWeek] = useState(activeWeekNumber);
+
+      const t = TRANSLATIONS[lang];
+
+      // Storage Key Helper (Isolated by Telegram User ID)
+      const getKey = (key) => `tena_${userId}_${key}`;
+
+      useEffect(() => {
+        if (darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }, [darkMode]);
+
+      // Initialization: Load user data and trigger cloud sync
+      useEffect(() => {
+        const currentUid = userId;
+
+        // Helper to remove any legacy dummy/mock members (IDs like c1, c2)
+        const sanitizeRealMembers = (rawList) => {
+          if (!Array.isArray(rawList)) return [];
+          const map = new Map();
+          rawList.forEach(m => {
+            if (!m) return;
+            const strId = String(m.id || m.telegramId || '');
+            if (strId.match(/^c\d+$/)) return; // Ignore legacy dummy test IDs
+            const key = m.telegramId ? `tg_${m.telegramId}` : (m.username ? `@${String(m.username).toLowerCase().replace(/^@/, '')}` : (m.id || m.name));
+            if (!key) return;
+            const existing = map.get(key);
+            if (existing) {
+              map.set(key, {
+                ...existing,
+                ...m,
+                stars: Math.max(Number(existing.stars) || 0, Number(m.stars) || 0),
+                dailyStars: Math.max(Number(existing.dailyStars) || 0, Number(m.dailyStars) || 0),
+                weeklyStars: Math.max(Number(existing.weeklyStars) || 0, Number(m.weeklyStars) || 0),
+                lastActive: Math.max(Number(existing.lastActive) || 0, Number(m.lastActive) || Date.now()),
+                avatar: m.avatar || existing.avatar,
+                badge: m.badge || existing.badge
+              });
+            } else {
+              map.set(key, {
+                ...m,
+                stars: Number(m.stars) || 0,
+                dailyStars: Number(m.dailyStars) || 0,
+                weeklyStars: Number(m.weeklyStars) || 0,
+                lastActive: Number(m.lastActive) || Date.now()
+              });
+            }
+          });
+          return Array.from(map.values()).sort((a, b) => (b.stars || 0) - (a.stars || 0));
+        };
+
+        // Shared Dynamic Community Leaderboard loading
+        const savedCommunity = localStorage.getItem('tena_global_community');
+        if (savedCommunity) {
+          try {
+            const parsed = JSON.parse(savedCommunity);
+            setCommunityList(sanitizeRealMembers(parsed));
+          } catch(e) {
+            setCommunityList([]);
+          }
+        } else {
+          setCommunityList([]);
+        }
+
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const lastSavedDate = localStorage.getItem(`tena_${currentUid}_last_date`);
+
+        let initialHabits = [];
+        // Load isolated user data
+        if (lastSavedDate !== todayStr) {
+          localStorage.setItem(`tena_${currentUid}_last_date`, todayStr);
+          localStorage.setItem(`tena_${currentUid}_habits`, JSON.stringify([]));
+          setCompletedHabits([]);
+        } else {
+          const savedHabits = localStorage.getItem(`tena_${currentUid}_habits`);
+          initialHabits = savedHabits ? JSON.parse(savedHabits) : [];
+          setCompletedHabits(initialHabits);
+        }
+
+        const savedStars = localStorage.getItem(`tena_${currentUid}_stars`);
+        const numStars = savedStars ? parseInt(savedStars, 10) : 0;
+        setUserStars(numStars);
+
+        const savedETB = localStorage.getItem(`tena_${currentUid}_etb`);
+        setWalletETB(savedETB ? parseInt(savedETB, 10) : 0);
+
+        const savedBooks = localStorage.getItem(`tena_${currentUid}_books`);
+        setUnlockedBooks(savedBooks ? JSON.parse(savedBooks) : []);
+
+        const savedChallenges = localStorage.getItem(`tena_${currentUid}_challenges`);
+        setChallengeProgress(savedChallenges ? JSON.parse(savedChallenges) : {});
+
+        const savedDeposits = localStorage.getItem(`tena_${currentUid}_deposits`);
+        setPendingDeposits(savedDeposits ? JSON.parse(savedDeposits) : []);
+
+        // Global Vouchers Database
+        const savedVouchers = localStorage.getItem('tena_global_vouchers');
+        if (savedVouchers) {
+          setCreatedVouchers(JSON.parse(savedVouchers));
+        } else {
+          const initialVouchers = {
+            "TENA100": { type: "etb", value: 100 },
+            "TENA200": { type: "etb", value: 200 },
+            "TENA500": { type: "etb", value: 500 },
+            "STARS100": { type: "stars", value: 100 },
+            "FREEBOOK": { type: "book", value: "b1" }
+          };
+          setCreatedVouchers(initialVouchers);
+          localStorage.setItem('tena_global_vouchers', JSON.stringify(initialVouchers));
+        }
+
+        // Telegram WebApp dynamic verification & immediate live registration
+        try {
+          if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            if (tg.initDataUnsafe?.user?.id) {
+              const tId = String(tg.initDataUnsafe.user.id);
+              const tName = tg.initDataUnsafe.user.last_name 
+                ? `${tg.initDataUnsafe.user.first_name} ${tg.initDataUnsafe.user.last_name}`
+                : (tg.initDataUnsafe.user.first_name || "Friend");
+              const tUsername = tg.initDataUnsafe.user.username || "";
+              const tPhoto = tg.initDataUnsafe.user.photo_url || null;
+
+              setUserId(tId);
+              setUserName(tName);
+              setUserUsername(tUsername);
+              if (tPhoto) setUserPhoto(tPhoto);
+              setIsAdmin(ADMIN_CONFIG.adminUsernames.includes(tUsername));
+
+              syncMyScoreToCloud(numStars, initialHabits, {
+                uid: tId,
+                uname: tName,
+                uusername: tUsername,
+                uphoto: tPhoto
+              });
+            } else {
+              syncMyScoreToCloud(numStars, initialHabits);
+            }
+          } else {
+            syncMyScoreToCloud(numStars, initialHabits);
+          }
+        } catch(e) {
+          syncMyScoreToCloud(numStars, initialHabits);
+        }
+
+        fetchLiveCloudLeaderboard();
+      }, []);
+
+      // SMART UNION MERGE TO PREVENT ANY PLAYER LOSS
+      const mergeCommunityLists = (listA, listB) => {
+        const map = new Map();
+        const addMember = (m) => {
+          if (!m) return;
+          const strId = String(m.id || m.telegramId || '');
+          if (strId.match(/^c\d+$/)) return; // Exclude fake mock data
+          const key = m.telegramId ? `tg_${m.telegramId}` : (m.username ? `@${String(m.username).toLowerCase().replace(/^@/, '')}` : (m.id || m.name));
+          if (!key) return;
+          const existing = map.get(key);
+          if (existing) {
+            map.set(key, {
+              ...existing,
+              ...m,
+              stars: Math.max(Number(existing.stars) || 0, Number(m.stars) || 0),
+              dailyStars: Math.max(Number(existing.dailyStars) || 0, Number(m.dailyStars) || 0),
+              weeklyStars: Math.max(Number(existing.weeklyStars) || 0, Number(m.weeklyStars) || 0),
+              lastActive: Math.max(Number(existing.lastActive) || 0, Number(m.lastActive) || Date.now()),
+              avatar: m.avatar || existing.avatar,
+              badge: m.badge || existing.badge
+            });
+          } else {
+            map.set(key, {
+              ...m,
+              stars: Number(m.stars) || 0,
+              dailyStars: Number(m.dailyStars) || 0,
+              weeklyStars: Number(m.weeklyStars) || 0,
+              lastActive: Number(m.lastActive) || Date.now()
+            });
+          }
+        };
+        (listA || []).forEach(addMember);
+        (listB || []).forEach(addMember);
+        return Array.from(map.values()).sort((a, b) => (b.stars || 0) - (a.stars || 0));
+      };
+
+      // LIVE CLOUD LEADERBOARD SYNCHRONIZATION
+      const syncMyScoreToCloud = async (overrideStars, overrideHabits, customProfile) => {
+        const effectiveUid = customProfile?.uid || userId;
+        const effectiveName = (customProfile?.uname || userName || "Friend").replace(/\(You\)/i, "").trim();
+        const effectiveUsername = (customProfile?.uusername || userUsername || "").replace(/^@/, "");
+        const effectivePhoto = customProfile?.uphoto || userPhoto || null;
+
+        const effectiveStars = overrideStars !== undefined ? overrideStars : userStars;
+        const effectiveHabits = overrideHabits !== undefined ? overrideHabits : completedHabits;
+
+        const calculatedDaily = effectiveHabits.reduce((acc, hid) => {
+          const h = DEFAULT_HABITS.find(item => item.id === hid);
+          return acc + (h ? h.xp : 15);
+        }, 0);
+
+        const calculatedWeekly = Math.round(effectiveStars * 0.35) + (calculatedDaily * 4);
+
+        const payload = {
+          id: `tg_${effectiveUid}`,
+          telegramId: String(effectiveUid),
+          name: effectiveName,
+          username: effectiveUsername || (effectiveName.toLowerCase().replace(/\s+/g, '')),
+          stars: effectiveStars,
+          dailyStars: calculatedDaily,
+          weeklyStars: calculatedWeekly,
+          avatar: effectivePhoto || null,
+          badge: getRankInfo(effectiveStars).name,
+          lastActive: Date.now()
+        };
+
+        // 1. BroadcastChannel for instant local cross-tab / cross-window sync
+        if (window.BroadcastChannel) {
+          try {
+            const bc = new BroadcastChannel('tena_leaderboard_channel');
+            bc.postMessage({ type: 'USER_SCORE_UPDATE', user: payload });
+            bc.close();
+          } catch(e) {}
+        }
+
+        // 2. Telegram Native CloudStorage (Persistent per user in Telegram's datacenter, Bot API 6.9+)
+        try {
+          if (window.Telegram?.WebApp?.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.9') && window.Telegram.WebApp.CloudStorage) {
+            window.Telegram.WebApp.CloudStorage.setItem('tena_my_profile', JSON.stringify(payload), () => {});
+          }
+        } catch(e) {}
+
+        let syncedSuccessfully = false;
+
+        // 3. Primary: Try Node.js Full-Stack Backend API (if server.ts is active)
+        try {
+          const res = await fetch('/api/leaderboard/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.members && Array.isArray(data.members)) {
+              const cleaned = mergeCommunityLists(communityList, data.members);
+              setCommunityList(cleaned);
+              localStorage.setItem('tena_global_community', JSON.stringify(cleaned));
+              setLastSyncTime(new Date());
+              setSyncEngineMode("Live Node.js Cloud API");
+              syncedSuccessfully = true;
+            }
+          }
+        } catch (err) {
+          // Expected when index.html is hosted statically
+        }
+
+        // 4. Secondary: Permanent Cloud JSON Storage (Resilient Multi-User REST Relay)
+        if (!syncedSuccessfully) {
+          try {
+            const CLOUD_STORAGE_KEY = 'tena_tg_live_leaderboard_master_v1';
+            let remoteMembers = [];
+
+            // Read existing live cloud state
+            try {
+              const cloudGet = await fetch(`https://jsonblob.com/api/jsonBlob/${CLOUD_STORAGE_KEY}`, {
+                headers: { 'Accept': 'application/json' }
+              });
+              if (cloudGet.ok) {
+                const data = await cloudGet.json();
+                if (Array.isArray(data)) {
+                  remoteMembers = data;
+                }
+              }
+            } catch(e) {}
+
+            const merged = mergeCommunityLists(remoteMembers.length > 0 ? remoteMembers : communityList, [payload]);
+
+            // Save back with robust JSON body
+            try {
+              await fetch(`https://jsonblob.com/api/jsonBlob/${CLOUD_STORAGE_KEY}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(merged)
+              });
+            } catch(e) {}
+
+            setCommunityList(merged);
+            localStorage.setItem('tena_global_community', JSON.stringify(merged));
+            setLastSyncTime(new Date());
+            setSyncEngineMode("Permanent Global Cloud Relay");
+            syncedSuccessfully = true;
+          } catch(cloudErr) {
+            // Local resilient vault fallback
+            setCommunityList(prev => {
+              const merged = mergeCommunityLists(prev, [payload]);
+              localStorage.setItem('tena_global_community', JSON.stringify(merged));
+              return merged;
+            });
+            setSyncEngineMode("Local Device Sync Vault");
+          }
+        }
+      };
+
+      const fetchLiveCloudLeaderboard = async () => {
+        setIsSyncingLeaderboard(true);
+        let fetchedData = null;
+
+        // 1. Try Node.js Full-Stack Backend API
+        try {
+          const res = await fetch('/api/leaderboard', { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.members && Array.isArray(data.members)) {
+              fetchedData = data.members;
+              setSyncEngineMode("Live Node.js Cloud API");
+            }
+          }
+        } catch (err) {
+          // Expected on static hosting
+        }
+
+        // 2. Secondary: Try Permanent Global Cloud JSON Storage
+        if (!fetchedData) {
+          try {
+            const CLOUD_STORAGE_KEY = 'tena_tg_live_leaderboard_master_v1';
+            const cloudRes = await fetch(`https://jsonblob.com/api/jsonBlob/${CLOUD_STORAGE_KEY}`, {
+              headers: { 'Accept': 'application/json' },
+              cache: 'no-store'
+            });
+            if (cloudRes.ok) {
+              const data = await cloudRes.json();
+              if (Array.isArray(data)) {
+                fetchedData = data;
+                setSyncEngineMode("Permanent Global Cloud Relay");
+              }
+            }
+          } catch(e) {}
+        }
+
+        if (fetchedData) {
+          setCommunityList(prev => {
+            const merged = mergeCommunityLists(prev, fetchedData);
+            localStorage.setItem('tena_global_community', JSON.stringify(merged));
+            return merged;
+          });
+          setLastSyncTime(new Date());
+        } else {
+          // Fallback to local storage cache
+          const cached = localStorage.getItem('tena_global_community');
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached);
+              setCommunityList(prev => mergeCommunityLists(prev, parsed));
+            } catch(e) {}
+          }
+          if (syncEngineMode === "Connecting...") {
+            setSyncEngineMode("Local Device Sync Vault");
+          }
+        }
+        setIsSyncingLeaderboard(false);
+      };
+
+      // Real-time broadcast and polling sync
+      useEffect(() => {
+        fetchLiveCloudLeaderboard();
+
+        let bc = null;
+        if (window.BroadcastChannel) {
+          try {
+            bc = new BroadcastChannel('tena_leaderboard_channel');
+            bc.onmessage = (event) => {
+              if (event.data?.type === 'USER_SCORE_UPDATE' && event.data.user) {
+                const incoming = event.data.user;
+                setCommunityList(prev => mergeCommunityLists(prev, [incoming]));
+              }
+            };
+          } catch(e) {}
+        }
+
+        // Fast live polling every 6 seconds to catch active Telegram participants in real time
+        const syncInterval = setInterval(() => {
+          fetchLiveCloudLeaderboard();
+        }, 6000);
+
+        return () => {
+          if (bc) bc.close();
+          clearInterval(syncInterval);
+        };
+      }, [userId, userName, userUsername]);
+
+      const triggerLevelUpConfetti = useCallback(() => {
+        if (typeof confetti === 'function') {
+          // 1. Center primary burst
+          confetti({
+            particleCount: 90,
+            spread: 90,
+            origin: { y: 0.5 },
+            colors: ['#f59e0b', '#10b981', '#14b8a6', '#38bdf8', '#fbbf24', '#ec4899', '#a855f7'],
+            ticks: 350,
+            scalar: 1.2
+          });
+          // 2. Left angled firework
+          setTimeout(() => {
+            confetti({
+              particleCount: 50,
+              angle: 60,
+              spread: 70,
+              origin: { x: 0.1, y: 0.6 },
+              colors: ['#f59e0b', '#14b8a6', '#fbbf24', '#38bdf8']
+            });
+          }, 180);
+          // 3. Right angled firework
+          setTimeout(() => {
+            confetti({
+              particleCount: 50,
+              angle: 120,
+              spread: 70,
+              origin: { x: 0.9, y: 0.6 },
+              colors: ['#f59e0b', '#10b981', '#fbbf24', '#ec4899']
+            });
+          }, 360);
+        }
+      }, []);
+
+      // Monitor for Rank Promotions
+      useEffect(() => {
+        const currentRank = getRankInfo(userStars);
+        if (!isInitializedRef.current) {
+          isInitializedRef.current = true;
+          prevRankTierRef.current = currentRank;
+          return;
+        }
+
+        if (prevRankTierRef.current && currentRank.tierIndex > prevRankTierRef.current.tierIndex) {
+          const oldRank = prevRankTierRef.current;
+          setLevelUpModal({
+            oldRank,
+            newRank: currentRank,
+            stars: userStars
+          });
+          triggerLevelUpConfetti();
+          try {
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+              window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            }
+          } catch(e) {}
+        }
+        prevRankTierRef.current = currentRank;
+      }, [userStars, triggerLevelUpConfetti]);
+
+      const updateStars = (delta, customHabits) => {
+        setUserStars(prev => {
+          const val = Math.max(0, prev + delta);
+          localStorage.setItem(getKey('stars'), String(val));
+          syncMyScoreToCloud(val, customHabits);
+          return val;
+        });
+      };
+
+      const triggerConfetti = () => {
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 70,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#14b8a6', '#0d9488', '#f59e0b', '#10b981', '#38bdf8']
+          });
+          setTimeout(() => {
+            confetti({
+              particleCount: 40,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0, y: 0.65 },
+              colors: ['#14b8a6', '#f59e0b', '#ec4899', '#10b981']
+            });
+            confetti({
+              particleCount: 40,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1, y: 0.65 },
+              colors: ['#14b8a6', '#f59e0b', '#ec4899', '#10b981']
+            });
+          }, 250);
+        }
+      };
+
+      const toggleHabit = (habit) => {
+        const isDone = completedHabits.includes(habit.id);
+        const updated = isDone ? completedHabits.filter(id => id !== habit.id) : [...completedHabits, habit.id];
+        setCompletedHabits(updated);
+        localStorage.setItem(getKey('habits'), JSON.stringify(updated));
+        updateStars(isDone ? -habit.xp : habit.xp, updated);
+
+        // Confetti celebration when all daily habits are completed
+        if (!isDone && updated.length === DEFAULT_HABITS.length) {
+          triggerConfetti();
+        }
+      };
+
+      const toggleChallengeDay = (weekNum, dayIdx) => {
+        if (weekNum !== activeWeekNumber) return;
+        const key = `w${weekNum}_d${dayIdx}`;
+        const isDone = !!challengeProgress[key];
+        const updated = { ...challengeProgress, [key]: !isDone };
+        setChallengeProgress(updated);
+        localStorage.setItem(getKey('challenges'), JSON.stringify(updated));
+        updateStars(isDone ? -15 : 15);
+      };
+
+      const handleUnlockWithStars = (book) => {
+        if (userStars < book.starPrice) {
+          alert(`You need ${book.starPrice} Stars. You currently have ${userStars} Stars.`);
+          return;
+        }
+        updateStars(-book.starPrice);
+        const updated = [...unlockedBooks, book.id];
+        setUnlockedBooks(updated);
+        localStorage.setItem(getKey('books'), JSON.stringify(updated));
+      };
+
+      const handleUnlockWithETB = (book) => {
+        if (walletETB < book.etbPrice) {
+          setShowTopUp(true);
+          setTopUpAmount(String(book.etbPrice));
+          return;
+        }
+        setWalletETB(prev => {
+          const val = prev - book.etbPrice;
+          localStorage.setItem(getKey('etb'), String(val));
+          return val;
+        });
+        const updated = [...unlockedBooks, book.id];
+        setUnlockedBooks(updated);
+        localStorage.setItem(getKey('books'), JSON.stringify(updated));
+      };
+
+      const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        setCopyNotice(text);
+        setTimeout(() => setCopyNotice(""), 2500);
+      };
+
+      const handleDepositSubmit = () => {
+        const newReq = {
+          id: Date.now(),
+          amount: topUpAmount,
+          method: selectedMethod === 'telebirr' ? 'Telebirr' : 'CBE Bank',
+          txn: txnReference || 'Direct Transfer',
+          date: new Date().toLocaleDateString(),
+          user: userName,
+          status: 'Pending'
+        };
+        const updated = [newReq, ...pendingDeposits];
+        setPendingDeposits(updated);
+        localStorage.setItem(getKey('deposits'), JSON.stringify(updated));
+
+        const text = encodeURIComponent(
+          `Hello Tena Holistic Services!\n\nI transferred ${topUpAmount} ETB via ${newReq.method}.\nUser: ${userName}\nTxn Reference: ${newReq.txn}`
+        );
+        const tgUrl = `https://t.me/YourTelegramUsername?text=${text}`;
+        if (window.Telegram?.WebApp?.openTelegramLink) {
+          window.Telegram.WebApp.openTelegramLink(tgUrl);
+        } else {
+          window.open(tgUrl, '_blank');
+        }
+
+        setShowTopUp(false);
+        setTopUpStep(1);
+        setTxnReference("");
+      };
+
+      const handleRedeemVoucher = () => {
+        const clean = voucherCodeInput.trim().toUpperCase();
+
+        if (clean === "ADMIN7788" || clean === ADMIN_CONFIG.masterPin) {
+          setIsAdmin(true);
+          setShowAdminPanel(true);
+          setVoucherCodeInput("");
+          setVoucherFeedback("👑 Welcome Super Admin!");
+          return;
+        }
+
+        if (createdVouchers[clean]) {
+          const v = createdVouchers[clean];
+          if (v.type === 'etb') {
+            const next = walletETB + v.value;
+            setWalletETB(next);
+            localStorage.setItem(getKey('etb'), String(next));
+            setVoucherFeedback(`✅ Added +${v.value} ETB to your wallet.`);
+          } else if (v.type === 'stars') {
+            updateStars(v.value);
+            setVoucherFeedback(`✅ Added +${v.value} Stars.`);
+          } else if (v.type === 'book') {
+            if (!unlockedBooks.includes(v.value)) {
+              const updated = [...unlockedBooks, v.value];
+              setUnlockedBooks(updated);
+              localStorage.setItem(getKey('books'), JSON.stringify(updated));
+            }
+            setVoucherFeedback(`✅ Unlocked digital book.`);
+          }
+          setVoucherCodeInput("");
+        } else {
+          setVoucherFeedback("❌ Invalid or expired voucher code.");
+        }
+      };
+
+      const handleAdminGenerateCode = () => {
+        const randomNum = Math.floor(1000 + Math.random() * 9000);
+        let prefix = adminGenType === 'etb' ? `TENA${adminGenAmount}` : adminGenType === 'stars' ? `STARS${adminGenAmount}` : `BOOK`;
+        const code = `${prefix}-${randomNum}`;
+        const newEntry = {
+          type: adminGenType,
+          value: adminGenType === 'book' ? 'b1' : parseInt(adminGenAmount, 10)
+        };
+        const updated = { ...createdVouchers, [code]: newEntry };
+        setCreatedVouchers(updated);
+        localStorage.setItem('tena_global_vouchers', JSON.stringify(updated));
+        setAdminGeneratedCode(code);
+      };
+
+      const handleAdminApproveDeposit = (deposit) => {
+        const next = walletETB + parseInt(deposit.amount, 10);
+        setWalletETB(next);
+        localStorage.setItem(getKey('etb'), String(next));
+
+        const updated = pendingDeposits.filter(d => d.id !== deposit.id);
+        setPendingDeposits(updated);
+        localStorage.setItem(getKey('deposits'), JSON.stringify(updated));
+        alert(`Approved ${deposit.amount} ETB for ${deposit.user}!`);
+      };
+
+      // Dynamic Community Calculations
+      const baseList = communityList.length > 0 ? communityList : INITIAL_COMMUNITY_MEMBERS;
+      
+      const todayEarnedStars = completedHabits.reduce((acc, hid) => {
+        const h = DEFAULT_HABITS.find(item => item.id === hid);
+        return acc + (h ? h.xp : 15);
+      }, 0);
+
+      const currentUserMember = {
+        id: `user_${userId}`,
+        telegramId: String(userId),
+        name: `${userName} (You)`,
+        username: userUsername || (userName.toLowerCase().replace(/\s+/g, '')),
+        stars: userStars,
+        dailyStars: todayEarnedStars,
+        weeklyStars: Math.round(userStars * 0.35) + (todayEarnedStars * 4),
+        avatar: userPhoto || null,
+        badge: getRankInfo(userStars).name,
+        isCurrentUser: true
+      };
+
+      // Filter out any duplicate matching current user from community list
+      const otherMembers = baseList.filter(m => {
+        if (m.telegramId && String(m.telegramId) === String(userId)) return false;
+        if (userUsername && m.username && String(m.username).toLowerCase() === String(userUsername).toLowerCase()) return false;
+        return true;
+      });
+
+      const fullCommunity = [currentUserMember, ...otherMembers];
+
+      // Sort according to active timeframe and calculate global rank
+      const allMembers = fullCommunity.map(m => {
+        let displayScore = m.stars || 0;
+        if (leaderboardTimeframe === 'daily') {
+          displayScore = m.isCurrentUser ? currentUserMember.dailyStars : (typeof m.dailyStars === 'number' ? m.dailyStars : Math.round((m.stars || 0) * 0.05));
+        } else if (leaderboardTimeframe === 'weekly') {
+          displayScore = m.isCurrentUser ? currentUserMember.weeklyStars : (typeof m.weeklyStars === 'number' ? m.weeklyStars : Math.round((m.stars || 0) * 0.25));
+        } else {
+          displayScore = m.isCurrentUser ? currentUserMember.stars : (m.stars || 0);
+        }
+        return {
+          ...m,
+          score: displayScore
+        };
+      }).sort((a, b) => b.score - a.score).map((m, idx) => ({ ...m, globalRank: idx + 1 }));
+
+      const searchQueryClean = leaderboardSearch.trim().replace(/^@/, '').toLowerCase();
+      const isSearching = searchQueryClean.length > 0;
+
+      const searchResults = isSearching 
+        ? allMembers.filter(m => {
+            const matchName = m.name && m.name.toLowerCase().includes(searchQueryClean);
+            const matchUsername = m.username && m.username.toLowerCase().replace(/^@/, '').includes(searchQueryClean);
+            const matchBadge = m.badge && m.badge.toLowerCase().includes(searchQueryClean);
+            return matchName || matchUsername || matchBadge;
+          })
+        : [];
+
+      const top1 = allMembers[0] || currentUserMember;
+      const top2 = allMembers[1] || null;
+      const top3 = allMembers[2] || null;
+      const remainingMembers = allMembers.slice(3);
+
+      const userRankPosition = allMembers.findIndex(m => m.isCurrentUser) + 1;
+      const rank = getRankInfo(userStars);
+      const currentChallengeWeek = MONTH_CHALLENGES.find(c => c.week === viewingWeek);
+
+      return (
+        <div className="max-w-md mx-auto min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col relative pb-24 font-sans">
+          
+          {/* MINT TOP APP BAR */}
+          <header className="bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/10 backdrop-blur-md border-b border-teal-100 dark:border-slate-800 px-5 py-3.5 sticky top-0 z-30 flex items-center justify-between">
+            
+            {/* Secret 5-Tap on Leaf Logo */}
+            <div 
+              onClick={() => {
+                window.adminTapCount = (window.adminTapCount || 0) + 1;
+                clearTimeout(window.adminTapTimer);
+                window.adminTapTimer = setTimeout(() => { window.adminTapCount = 0; }, 2000);
+                
+                if (window.adminTapCount >= 5) {
+                  window.adminTapCount = 0;
+                  const pin = prompt("Enter Master Admin PIN:");
+                  if (pin === ADMIN_CONFIG.masterPin) {
+                    setIsAdmin(true);
+                    setShowAdminPanel(true);
+                  } else if (pin !== null) {
+                    alert("Incorrect PIN.");
+                  }
+                }
+              }}
+              className="flex items-center space-x-2.5 cursor-pointer active:scale-95 transition"
+            >
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 flex items-center justify-center text-white font-bold text-base shadow-sm">
+                🌿
+              </div>
+              <div>
+                <h1 className="text-sm font-black tracking-tight">{t.appName}</h1>
+                <p className="text-[10px] text-teal-700 dark:text-teal-400 font-semibold">Addis Ababa, Ethiopia 🇪🇹</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setLang(lang === 'en' ? 'am' : 'en')}
+                className="px-3 py-1 bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-300 text-xs font-black rounded-full border border-teal-100 dark:border-slate-700 shadow-xs"
+              >
+                {lang === 'en' ? 'አማርኛ' : 'English'}
+              </button>
+
+              <button
+                onClick={() => { setActiveTab('challenges'); setChallengeSubTab('ranks'); }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-300 text-xs font-black border border-teal-100 dark:border-slate-700 shadow-xs active:scale-95 transition"
+                title="View Community Leaderboard"
+              >
+                <UserAvatar src={userPhoto} name={userName} size="xs" ringClass="ring-1 ring-teal-500" />
+                <span>#{userRankPosition}</span>
+              </button>
+            </div>
+          </header>
+
+          {/* TAB 1: DAILY TRACKER */}
+          {activeTab === 'tracker' && (
+            <main className="p-4 space-y-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-teal-100/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950 px-2.5 py-0.5 rounded-full">
+                      {t.dailyReset}
+                    </span>
+                    <h2 className="text-xl font-black mt-2">{t.welcome}, {userName}! 👋</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Rank #{userRankPosition} • ⭐ {userStars} Stars</p>
+                  </div>
+                  
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-500 text-white flex flex-col items-center justify-center shadow-md">
+                    <span className="text-base">🔥</span>
+                    <span className="text-[10px] font-black leading-none mt-0.5">3 Days</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3.5">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="font-black text-sm text-slate-900 dark:text-slate-100">{t.todayHabits}</h3>
+                    <p className="text-[11px] text-slate-400">Curated by Tena • Resets every 24h</p>
+                  </div>
+                  <span className="text-xs font-black text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950 px-3 py-1 rounded-full">
+                    {completedHabits.length}/{DEFAULT_HABITS.length} {t.done}
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {DEFAULT_HABITS.map(habit => {
+                    const done = completedHabits.includes(habit.id);
+                    return (
+                      <div
+                        key={habit.id}
+                        onClick={() => toggleHabit(habit)}
+                        className={`p-3.5 rounded-2xl border transition flex items-center justify-between cursor-pointer active:scale-[0.99] ${
+                          done 
+                            ? 'bg-teal-50/70 dark:bg-teal-950/40 border-teal-300 dark:border-teal-800 text-teal-900 dark:text-teal-200' 
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="text-lg">{habit.icon}</span>
+                          <span className={`text-xs font-bold ${done ? 'line-through opacity-70' : ''}`}>
+                            {lang === 'am' ? habit.amText : habit.text}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-black text-amber-500">+{habit.xp} ⭐</span>
+                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
+                            done ? 'bg-teal-600 text-white' : 'border-2 border-slate-300 dark:border-slate-600'
+                          }`}>
+                            {done ? '✓' : ''}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {completedHabits.length === DEFAULT_HABITS.length && (
+                  <div className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl p-3.5 shadow-sm flex items-center justify-between animate-fade-in mt-3">
+                    <div className="flex items-center space-x-2.5">
+                      <span className="text-xl animate-bounce-subtle">🎉</span>
+                      <div>
+                        <h4 className="text-xs font-black">{t.allHabitsCelebration}</h4>
+                        <p className="text-[10px] text-teal-100">{t.allHabitsSub}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); triggerConfetti(); }}
+                      className="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white text-[10px] font-black rounded-xl backdrop-blur-xs transition shrink-0 ml-2"
+                    >
+                      🎊 Confetti
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* LIVE COMMUNITY LEADERBOARD HIGHLIGHT BANNER */}
+              <div 
+                onClick={() => { setActiveTab('challenges'); setChallengeSubTab('ranks'); }}
+                className="bg-gradient-to-r from-amber-500 via-yellow-500 to-emerald-600 text-white rounded-3xl p-4 shadow-sm cursor-pointer active:scale-[0.99] transition flex items-center justify-between"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg">
+                    🏆
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black">{t.viewLeaderboard}</span>
+                      <span className="text-[9px] bg-white/30 px-1.5 py-0.2 rounded-full font-black">LIVE</span>
+                    </div>
+                    <p className="text-[10px] text-amber-100">
+                      You are Rank #{userRankPosition} among {allMembers.length} active players
+                    </p>
+                  </div>
+                </div>
+                <span className="text-base font-black bg-white/20 px-2.5 py-1 rounded-xl">→</span>
+              </div>
+            </main>
+          )}
+
+          {/* TAB 2: LEADERBOARD & CHALLENGES */}
+          {activeTab === 'challenges' && (
+            <main className="p-4 space-y-4 animate-fade-in">
+              
+              {/* TOP SUB-TAB PILL SWITCHER */}
+              <div className="bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex shadow-xs">
+                <button
+                  onClick={() => setChallengeSubTab('ranks')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition ${
+                    challengeSubTab === 'ranks'
+                      ? 'bg-teal-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'
+                  }`}
+                >
+                  <span>🏆</span>
+                  <span>{t.ranksTab || "Community Rankings"}</span>
+                </button>
+
+                <button
+                  onClick={() => setChallengeSubTab('challenges')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition ${
+                    challengeSubTab === 'challenges'
+                      ? 'bg-teal-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'
+                  }`}
+                >
+                  <span>📅</span>
+                  <span>{t.challengesTab || "7-Day Challenges"}</span>
+                </button>
+              </div>
+
+              {/* SUB-VIEW 1: COMPLETE LIVE COMMUNITY LEADERBOARD */}
+              {challengeSubTab === 'ranks' && (
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+                  
+                  {/* Header with Live Indicator & Refresh */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-black tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <span>{t.leaderboard}</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                          <span>{t.liveIndicator}</span>
+                        </span>
+                      </h3>
+                      <p className="text-[10px] text-slate-400 font-semibold">
+                        {allMembers.length} {t.activeCommunity} • {isSyncingLeaderboard ? t.syncing : t.liveSync}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          const shareText = encodeURIComponent("Join me on the Tena Holistic Services Mini App! Track habits and climb the leaderboard: ");
+                          const shareUrl = encodeURIComponent(window.location.href);
+                          if (window.Telegram?.WebApp?.openTelegramLink) {
+                            window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${shareUrl}&text=${shareText}`);
+                          } else {
+                            window.open(`https://t.me/share/url?url=${shareUrl}&text=${shareText}`, '_blank');
+                          }
+                        }}
+                        className="flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 transition active:scale-95"
+                        title="Share / Invite Telegram Friends"
+                      >
+                        <span>✈️</span>
+                        <span className="hidden sm:inline">Invite</span>
+                      </button>
+
+                      <button
+                        onClick={() => fetchLiveCloudLeaderboard()}
+                        disabled={isSyncingLeaderboard}
+                        className="flex items-center gap-1 text-[11px] font-black text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900 px-3 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800 transition active:scale-95 disabled:opacity-50"
+                      >
+                        <span className={isSyncingLeaderboard ? "animate-spin" : ""}>🔄</span>
+                        <span>{t.refreshLeaderboard}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* TELEGRAM & CLOUD SERVER CONNECTION STATUS BADGE */}
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 text-[10px] space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-300">
+                        <span>📱</span>
+                        <span>Telegram:</span>
+                        <span className="text-teal-600 dark:text-teal-400 font-mono font-black">
+                          {userUsername ? `@${userUsername}` : userName} (ID: {userId ? String(userId).slice(-6) : 'guest'})
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>{syncEngineMode.includes("Node") ? "Node API" : syncEngineMode.includes("Relay") ? "Live Cloud Sync" : "Local Sync"}</span>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-700/50 text-[9px] text-slate-400 font-semibold">
+                      <span className="flex items-center gap-1">
+                        <span>⚡ Engine:</span>
+                        <span className="text-slate-600 dark:text-slate-300 font-mono">{syncEngineMode}</span>
+                      </span>
+                      <span>Updated: {lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                    </div>
+                  </div>
+
+                  {/* Timeframe selector: Daily, Weekly, All-Time */}
+                  <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex justify-between">
+                    {['daily', 'weekly', 'monthly'].map((period) => (
+                      <button
+                        key={period}
+                        onClick={() => setLeaderboardTimeframe(period)}
+                        className={`flex-1 py-1.5 rounded-xl text-xs font-black capitalize transition ${
+                          leaderboardTimeframe === period
+                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                            : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {t[period] || period}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Instant Search Bar */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder={t.searchRanked || "Search member or @username..."}
+                      value={leaderboardSearch}
+                      onChange={(e) => setLeaderboardSearch(e.target.value)}
+                      className="w-full p-2.5 pl-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                    <span className="absolute left-2.5 top-2.5 text-xs text-slate-400">🔍</span>
+                    {leaderboardSearch && (
+                      <button 
+                        onClick={() => setLeaderboardSearch('')} 
+                        className="absolute right-2.5 top-2 text-xs text-slate-400 hover:text-slate-600 font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Current User Quick Summary Bar */}
+                  <div className="p-3 bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/10 dark:from-teal-950/40 dark:to-emerald-950/40 rounded-2xl border border-teal-200 dark:border-teal-800 flex items-center justify-between">
+                    <div className="flex items-center space-x-2.5">
+                      <UserAvatar src={userPhoto} name={userName} size="sm" ringClass="ring-2 ring-teal-500" />
+                      <div>
+                        <div className="text-xs font-black flex items-center gap-1.5">
+                          <span>{userName} (You)</span>
+                          <span className="text-[9px] bg-teal-600 text-white px-1.5 py-0.2 rounded-full font-black">YOU</span>
+                        </div>
+                        <p className="text-[10px] text-teal-700 dark:text-teal-400 font-bold">
+                          Rank #{userRankPosition} of {allMembers.length} • {rank.name}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-teal-700 dark:text-teal-300">
+                      ⭐ {currentUserMember.score}
+                    </span>
+                  </div>
+
+                  {/* CONDITIONAL RENDER: SEARCH RESULTS vs CINEMATIC 3D PODIUM & FULL ROSTER */}
+                  {isSearching ? (
+                    <div className="space-y-3 pt-1">
+                      <div className="flex items-center justify-between px-1">
+                        <div className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <span>🔍 Search Results</span>
+                          <span className="bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-2 py-0.5 rounded-full text-[10px] font-black">
+                            {searchResults.length} found
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => setLeaderboardSearch('')}
+                          className="text-[11px] font-bold text-teal-600 dark:text-teal-400 hover:underline"
+                        >
+                          Clear Search
+                        </button>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-3 space-y-2 border border-slate-100 dark:border-slate-700 max-h-[420px] overflow-y-auto">
+                        {searchResults.map((member) => {
+                          const formattedNum = member.globalRank < 10 ? `0${member.globalRank}` : String(member.globalRank);
+                          const isYou = member.isCurrentUser;
+
+                          return (
+                            <div
+                              key={member.id || `search_${member.globalRank}`}
+                              className={`p-3 rounded-2xl border flex items-center justify-between transition ${
+                                isYou 
+                                  ? 'bg-teal-50 dark:bg-teal-950/60 border-teal-400 ring-1 ring-teal-400 shadow-xs' 
+                                  : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-200'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs ${
+                                  member.globalRank === 1 ? 'bg-amber-400 text-amber-950 font-extrabold shadow-xs' :
+                                  member.globalRank === 2 ? 'bg-slate-300 text-slate-900 font-extrabold shadow-xs' :
+                                  member.globalRank === 3 ? 'bg-orange-300 text-orange-950 font-extrabold shadow-xs' :
+                                  'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono text-[11px]'
+                                }`}>
+                                  {member.globalRank === 1 ? '🥇' : member.globalRank === 2 ? '🥈' : member.globalRank === 3 ? '🥉' : formattedNum}
+                                </div>
+                                
+                                <UserAvatar 
+                                  src={typeof member.avatar === 'string' && member.avatar.startsWith('http') ? member.avatar : (member.isCurrentUser ? userPhoto : null)}
+                                  name={member.name}
+                                  size="sm"
+                                  fallbackEmoji={member.avatar || "👤"}
+                                  ringClass={isYou ? "ring-2 ring-teal-500" : ""}
+                                />
+
+                                <div>
+                                  <div className="text-xs font-black flex items-center gap-1.5">
+                                    <span className="text-slate-900 dark:text-slate-100">{member.name}</span>
+                                    {isYou && <span className="text-[9px] bg-teal-600 text-white px-1.5 py-0.2 rounded-full font-black">YOU</span>}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 flex items-center gap-1.5">
+                                    {member.username && <span className="text-teal-600 dark:text-teal-400 font-semibold">@{member.username}</span>}
+                                    <span>•</span>
+                                    <span>{member.badge}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <span className="text-xs font-black text-teal-700 dark:text-teal-300">
+                                  ⭐ {member.score}
+                                </span>
+                                <div className="text-[9px] text-slate-400 font-bold">
+                                  Rank #{member.globalRank}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {searchResults.length === 0 && (
+                          <div className="text-center py-6 px-4 space-y-3">
+                            <div className="text-3xl">🔍</div>
+                            <div>
+                              <p className="text-xs font-black text-slate-800 dark:text-slate-200">
+                                No participant found for "{leaderboardSearch}"
+                              </p>
+                              <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">
+                                Telegram players appear automatically once they open the Mini App and complete a habit.
+                              </p>
+                            </div>
+
+                            {/* QUICK TEST ADD & SHARE BUTTONS */}
+                            <div className="flex flex-col gap-2 max-w-xs mx-auto pt-1">
+                              <button
+                                onClick={async () => {
+                                  const rawName = leaderboardSearch.trim().replace(/^@/, '');
+                                  const testUser = {
+                                    id: `tg_test_${rawName.toLowerCase()}`,
+                                    telegramId: `test_${Date.now()}`,
+                                    name: rawName.charAt(0).toUpperCase() + rawName.slice(1),
+                                    username: rawName.toLowerCase(),
+                                    stars: 450,
+                                    dailyStars: 30,
+                                    weeklyStars: 120,
+                                    avatar: null,
+                                    badge: "Silver II",
+                                    lastActive: Date.now()
+                                  };
+                                  try {
+                                    await fetch('/api/leaderboard/sync', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify(testUser)
+                                    });
+                                    await fetchLiveCloudLeaderboard();
+                                  } catch(e) {}
+                                }}
+                                className="w-full py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-black shadow-sm flex items-center justify-center gap-2 active:scale-95 transition"
+                              >
+                                <span>➕</span>
+                                <span>Add "@{leaderboardSearch.replace(/^@/, '')}" as Test Player</span>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  const shareText = encodeURIComponent("Join me on the Tena Holistic Services Mini App! Track habits and climb the leaderboard: ");
+                                  const shareUrl = encodeURIComponent(window.location.href);
+                                  if (window.Telegram?.WebApp?.openTelegramLink) {
+                                    window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${shareUrl}&text=${shareText}`);
+                                  } else {
+                                    window.open(`https://t.me/share/url?url=${shareUrl}&text=${shareText}`, '_blank');
+                                  }
+                                }}
+                                className="w-full py-2 px-3 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition"
+                              >
+                                <span>✈️</span>
+                                <span>Invite Friends via Telegram</span>
+                              </button>
+
+                              <button
+                                onClick={() => { setLeaderboardSearch(''); fetchLiveCloudLeaderboard(); }}
+                                className="text-xs text-teal-600 dark:text-teal-400 font-bold hover:underline pt-1"
+                              >
+                                Show All {allMembers.length} Community Rankings
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* CINEMATIC & COLORFUL 3D PODIUM */}
+                      <div className="flex items-end justify-center gap-2 pt-8 pb-3 px-1">
+                        
+                        {/* #2 Left: Silver */}
+                        <div className="flex-1 flex flex-col items-center">
+                          {top2 ? (
+                            <>
+                              <div className="relative mb-2 flex flex-col items-center">
+                                <div className="p-1 rounded-full bg-gradient-to-tr from-slate-300 via-slate-100 to-slate-400 silver-aura">
+                                  <UserAvatar 
+                                    src={typeof top2.avatar === 'string' && top2.avatar.startsWith('http') ? top2.avatar : (top2.isCurrentUser ? userPhoto : null)} 
+                                    name={top2.name} 
+                                    size="podium2" 
+                                    ringClass="ring-2 ring-white dark:ring-slate-800"
+                                    fallbackEmoji="🥈"
+                                  />
+                                </div>
+                                <span className="absolute -top-3 text-lg filter drop-shadow">🥈</span>
+                              </div>
+                              <div className="text-xs font-black text-slate-800 dark:text-slate-200 text-center line-clamp-1 max-w-[90px]">
+                                {top2.name}
+                              </div>
+                              {top2.username && <span className="text-[9px] text-slate-400 font-semibold line-clamp-1">@{top2.username}</span>}
+                              <div className="text-[11px] text-slate-600 dark:text-slate-300 font-black mt-0.5">⭐ {top2.score}</div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="relative mb-2 flex flex-col items-center">
+                                <div className="w-12 h-12 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-200/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 text-sm">
+                                  ⚡
+                                </div>
+                                <span className="absolute -top-3 text-sm filter drop-shadow">🥈</span>
+                              </div>
+                              <div className="text-[11px] font-bold text-slate-400 text-center line-clamp-1">
+                                Open Slot
+                              </div>
+                              <span className="text-[9px] text-slate-400 font-medium">Challenger</span>
+                              <div className="text-[10px] text-slate-400 font-bold mt-0.5">-</div>
+                            </>
+                          )}
+                          
+                          {/* 3D Silver Pedestal */}
+                          <div className="pedestal-silver w-full rounded-t-2xl flex flex-col items-center justify-between p-2 text-slate-100 font-black shadow-lg mt-2 relative">
+                            <div className="shimmer-layer" />
+                            <span className="text-2xl drop-shadow-md z-10">2</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider bg-slate-800/40 text-slate-100 px-2 py-0.5 rounded-full z-10">
+                              2nd Place
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* #1 Center: Tall Gold Champion */}
+                        <div className="flex-1 flex flex-col items-center z-10">
+                          <div className="relative mb-2 flex flex-col items-center">
+                            <span className="absolute -top-7 text-3xl crown-animated filter drop-shadow-lg z-20">👑</span>
+                            <div className="p-1.5 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-500 gold-aura">
+                              <UserAvatar 
+                                src={typeof top1.avatar === 'string' && top1.avatar.startsWith('http') ? top1.avatar : (top1.isCurrentUser ? userPhoto : null)} 
+                                name={top1.name} 
+                                size="podium1" 
+                                ringClass="ring-3 ring-amber-300 dark:ring-amber-400"
+                                fallbackEmoji="👑"
+                              />
+                            </div>
+                            <span className="absolute -right-2 top-0 text-sm sparkle-effect">✨</span>
+                            <span className="absolute -left-2 bottom-2 text-sm sparkle-effect" style={{ animationDelay: '1s' }}>⭐</span>
+                          </div>
+                          
+                          <div className="text-xs font-black text-amber-600 dark:text-amber-400 text-center line-clamp-1 max-w-[100px]">
+                            {top1.name}
+                          </div>
+                          {top1.username && <span className="text-[9px] text-amber-500/80 font-semibold line-clamp-1">@{top1.username}</span>}
+                          <div className="text-xs text-amber-600 dark:text-amber-400 font-black mt-0.5">⭐ {top1.score}</div>
+                          
+                          {/* 3D Gold Pedestal */}
+                          <div className="pedestal-gold w-full rounded-t-2xl flex flex-col items-center justify-between p-2.5 text-amber-950 font-black shadow-xl mt-2 relative">
+                            <div className="shimmer-layer" />
+                            <span className="text-3xl drop-shadow-md z-10 text-white font-black">1</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider bg-amber-900/60 text-amber-100 px-2 py-0.5 rounded-full z-10 shadow-xs">
+                              Champion 👑
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* #3 Right: Bronze */}
+                        <div className="flex-1 flex flex-col items-center">
+                          {top3 ? (
+                            <>
+                              <div className="relative mb-2 flex flex-col items-center">
+                                <div className="p-1 rounded-full bg-gradient-to-tr from-amber-600 via-orange-400 to-amber-700 bronze-aura">
+                                  <UserAvatar 
+                                    src={typeof top3.avatar === 'string' && top3.avatar.startsWith('http') ? top3.avatar : (top3.isCurrentUser ? userPhoto : null)} 
+                                    name={top3.name} 
+                                    size="podium3" 
+                                    ringClass="ring-2 ring-white dark:ring-slate-800"
+                                    fallbackEmoji="🥉"
+                                  />
+                                </div>
+                                <span className="absolute -top-3 text-lg filter drop-shadow">🥉</span>
+                              </div>
+                              <div className="text-xs font-black text-slate-800 dark:text-slate-200 text-center line-clamp-1 max-w-[90px]">
+                                {top3.name}
+                              </div>
+                              {top3.username && <span className="text-[9px] text-slate-400 font-semibold line-clamp-1">@{top3.username}</span>}
+                              <div className="text-[11px] text-orange-600 dark:text-orange-400 font-black mt-0.5">⭐ {top3.score}</div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="relative mb-2 flex flex-col items-center">
+                                <div className="w-10 h-10 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-200/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 text-sm">
+                                  ✨
+                                </div>
+                                <span className="absolute -top-3 text-sm filter drop-shadow">🥉</span>
+                              </div>
+                              <div className="text-[11px] font-bold text-slate-400 text-center line-clamp-1">
+                                Open Slot
+                              </div>
+                              <span className="text-[9px] text-slate-400 font-medium">Challenger</span>
+                              <div className="text-[10px] text-slate-400 font-bold mt-0.5">-</div>
+                            </>
+                          )}
+                          
+                          {/* 3D Bronze Pedestal */}
+                          <div className="pedestal-bronze w-full rounded-t-2xl flex flex-col items-center justify-between p-2 text-orange-100 font-black shadow-lg mt-2 relative">
+                            <div className="shimmer-layer" />
+                            <span className="text-2xl drop-shadow-md z-10">3</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider bg-amber-950/40 text-orange-100 px-2 py-0.5 rounded-full z-10">
+                              3rd Place
+                            </span>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* BOTTOM COMMUNITY LIST SHEET (04, 05, 06...) */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-1 text-[11px] font-bold text-slate-400">
+                          <span>Rank & Participant</span>
+                          <span>Stars Score</span>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-3 space-y-2 border border-slate-100 dark:border-slate-700 max-h-96 overflow-y-auto">
+                          {remainingMembers.map((member, idx) => {
+                            const rankNum = member.globalRank || (idx + 4);
+                            const formattedNum = rankNum < 10 ? `0${rankNum}` : String(rankNum);
+                            const isYou = member.isCurrentUser;
+
+                            return (
+                              <div
+                                key={member.id || `member_${idx}`}
+                                className={`p-2.5 rounded-xl border flex items-center justify-between transition ${
+                                  isYou 
+                                    ? 'bg-teal-50 dark:bg-teal-950/60 border-teal-400 ring-1 ring-teal-400 shadow-xs' 
+                                    : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="text-xs font-mono font-black text-slate-400 w-5">
+                                    {formattedNum}
+                                  </span>
+                                  
+                                  <UserAvatar 
+                                    src={typeof member.avatar === 'string' && member.avatar.startsWith('http') ? member.avatar : (member.isCurrentUser ? userPhoto : null)}
+                                    name={member.name}
+                                    size="sm"
+                                    fallbackEmoji={member.avatar || "👤"}
+                                    ringClass={isYou ? "ring-2 ring-teal-500" : ""}
+                                  />
+
+                                  <div>
+                                    <div className="text-xs font-black flex items-center gap-1.5">
+                                      <span>{member.name}</span>
+                                      {isYou && <span className="text-[9px] bg-teal-600 text-white px-1.5 py-0.2 rounded-full font-black">YOU</span>}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 flex items-center gap-1.5">
+                                      {member.username && <span>@{member.username}</span>}
+                                      <span>•</span>
+                                      <span>{member.badge}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <span className="text-xs font-black text-teal-700 dark:text-teal-300">
+                                  ⭐ {member.score}
+                                </span>
+                              </div>
+                            );
+                          })}
+
+                          {remainingMembers.length === 0 && (
+                            <div className="text-center py-6 px-4 flex flex-col items-center justify-center">
+                              <div className="w-9 h-9 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center text-base mb-1.5">
+                                👥
+                              </div>
+                              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Real-Time Live Roster
+                              </p>
+                              <p className="text-[10.5px] text-slate-400 mt-1 max-w-xs text-center leading-relaxed">
+                                Users actively opening this Telegram Mini App and completing health challenges are synced live here.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                </div>
+              )}
+
+              {/* SUB-VIEW 2: 7-DAY CHALLENGES */}
+              {challengeSubTab === 'challenges' && (
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-base font-black">{t.weeklyChallenge}</h2>
+                    <p className="text-xs text-slate-500">Day {currentDay} of Month • Week {activeWeekNumber} Active</p>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2">
+                    {MONTH_CHALLENGES.map(c => {
+                      const isCurrent = c.week === activeWeekNumber;
+                      const isFuture = c.week > activeWeekNumber;
+                      const isSelected = viewingWeek === c.week;
+
+                      return (
+                        <button
+                          key={c.week}
+                          onClick={() => setViewingWeek(c.week)}
+                          className={`py-2.5 px-1 rounded-2xl text-xs font-black flex flex-col items-center justify-center transition border ${
+                            isSelected 
+                              ? 'bg-teal-600 text-white border-teal-600 shadow-sm' 
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+                          }`}
+                        >
+                          <span className="text-xs">
+                            {isCurrent ? '⚡' : isFuture ? '🔒' : '✅'} {t.week} {c.week}
+                          </span>
+                          <span className="text-[9px] opacity-75 font-medium">{c.dayRange}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {currentChallengeWeek && (
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+                      <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${
+                          currentChallengeWeek.week === activeWeekNumber
+                            ? 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300'
+                            : currentChallengeWeek.week > activeWeekNumber
+                            ? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                            : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                        }`}>
+                          {currentChallengeWeek.week === activeWeekNumber ? t.activeWeekBadge : currentChallengeWeek.week > activeWeekNumber ? `${t.lockedWeek} ${currentChallengeWeek.dayRange}` : t.pastWeek}
+                        </span>
+                        <h3 className="text-sm font-black mt-2">
+                          {lang === 'am' ? currentChallengeWeek.amTitle : currentChallengeWeek.title}
+                        </h3>
+                      </div>
+
+                      <div className="bg-teal-50/70 dark:bg-teal-950/40 p-4 rounded-2xl text-xs leading-relaxed border border-teal-100 dark:border-teal-900">
+                        <p className="font-black text-teal-800 dark:text-teal-300 mb-1">💡 {t.challengeWhy}</p>
+                        {lang === 'am' ? currentChallengeWeek.amMotivation : currentChallengeWeek.motivation}
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-black">7-Day Progress</h4>
+                        {currentChallengeWeek.days.map((dayText, idx) => {
+                          const dayNum = idx + 1;
+                          const key = `w${currentChallengeWeek.week}_d${dayNum}`;
+                          const isDone = !!challengeProgress[key];
+                          const isInteractive = currentChallengeWeek.week === activeWeekNumber;
+
+                          return (
+                            <div
+                              key={dayNum}
+                              onClick={() => isInteractive && toggleChallengeDay(currentChallengeWeek.week, dayNum)}
+                              className={`p-3 rounded-2xl border flex items-center justify-between transition ${
+                                !isInteractive 
+                                  ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 border-slate-200' 
+                                  : isDone 
+                                  ? 'bg-teal-50 dark:bg-teal-950/50 border-teal-300 cursor-pointer' 
+                                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 cursor-pointer'
+                              }`}
+                            >
+                              <span className={`text-xs ${isDone ? 'line-through text-slate-400 font-normal' : 'font-bold'}`}>
+                                Day {dayNum}: {dayText}
+                              </span>
+                              <span className="text-xs font-black">
+                                {!isInteractive ? (currentChallengeWeek.week > activeWeekNumber ? '🔒' : '✅ Closed') : isDone ? '✅ Completed' : '⚪ Check in'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </main>
+          )}
+
+          {/* TAB 3: HEALTH HUB */}
+          {activeTab === 'hub' && (
+            <main className="p-4 space-y-4 animate-fade-in">
+              <div>
+                <h2 className="text-base font-black">{t.guidesTitle}</h2>
+                <p className="text-xs text-slate-500">{t.guidesSub}</p>
+              </div>
+
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t.searchPlaceholder}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-xs font-medium"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-3 text-slate-400 text-xs font-black">✕</button>
+                )}
+              </div>
+
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {HEALTH_CATEGORIES.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCat(cat)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-black whitespace-nowrap transition ${
+                      selectedCat === cat 
+                        ? 'bg-teal-600 text-white shadow-sm' 
+                        : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-4">
+                {HEALTH_ARTICLES.filter(a => selectedCat === "All" || a.category === selectedCat).map(article => (
+                  <div key={article.id} className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                    <div className="relative h-44">
+                      <img src={article.thumbnail} alt={article.title} className="w-full h-full object-cover" />
+                      <span className="absolute top-3 left-3 bg-teal-600/90 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-xs">
+                        {article.category}
+                      </span>
+                    </div>
+
+                    <div className="p-4 space-y-2.5">
+                      <h3 className="font-black text-sm leading-snug">{article.title}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{article.snippet}</p>
+
+                      <div className="pt-1 flex gap-2">
+                        <button
+                          onClick={() => window.Telegram?.WebApp?.openLink ? window.Telegram.WebApp.openLink(article.youtubeUrl) : window.open(article.youtubeUrl, '_blank')}
+                          className="flex-1 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-black py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1"
+                        >
+                          ▶ {t.watchYoutube}
+                        </button>
+                        <button
+                          onClick={() => setSelectedArticle(article)}
+                          className="flex-1 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 font-black py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1"
+                        >
+                          📖 {t.readGuide}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </main>
+          )}
+
+          {/* TAB 4: STORE */}
+          {activeTab === 'store' && (
+            <main className="p-4 space-y-5 animate-fade-in">
+              <div className="space-y-3">
+                <h3 className="font-black text-sm">📚 Premium Digital Books</h3>
+                {DIGITAL_BOOKS.map(book => {
+                  const isUnlocked = unlockedBooks.includes(book.id);
+                  return (
+                    <div key={book.id} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-sm flex gap-3.5">
+                      <img src={book.cover} alt={book.title} className="w-20 h-28 object-cover rounded-2xl shrink-0" />
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[9px] uppercase font-black text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">{book.category}</span>
+                          <h4 className="font-black text-xs leading-snug mt-1.5">{book.title}</h4>
+                        </div>
+
+                        {isUnlocked ? (
+                          <button
+                            onClick={() => setSelectedBook(book)}
+                            className="w-full py-2 bg-teal-600 text-white rounded-xl text-xs font-black shadow-xs mt-2"
+                          >
+                            📖 Read Book (Unlocked)
+                          </button>
+                        ) : (
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => handleUnlockWithETB(book)}
+                              className="flex-1 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-xl text-[10px] font-black"
+                            >
+                              💵 {book.etbPrice} ETB
+                            </button>
+                            <button
+                              onClick={() => handleUnlockWithStars(book)}
+                              className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black"
+                            >
+                              ⭐ {book.starPrice} Stars
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="font-black text-sm">🌿 Natural Remedies</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {STORE_PRODUCTS.map(product => (
+                    <div key={product.id} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between">
+                      <div>
+                        <img src={product.image} alt={product.title} className="w-full h-28 object-cover" />
+                        <div className="p-3">
+                          <span className="text-[9px] uppercase font-black text-teal-600">{product.category}</span>
+                          <h4 className="font-black text-xs mt-0.5 line-clamp-1">{product.title}</h4>
+                          <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">{product.description}</p>
+                        </div>
+                      </div>
+
+                      <div className="p-3 pt-0 flex items-center justify-between border-t border-slate-50 dark:border-slate-800 mt-2">
+                        <span className="font-black text-xs">{product.price}</span>
+                        <button
+                          onClick={() => {
+                            const msg = encodeURIComponent(`Hello Tena Holistic Services! I want to order: ${product.title} (${product.price}).`);
+                            const url = `https://t.me/YourTelegramUsername?text=${msg}`;
+                            window.Telegram?.WebApp?.openTelegramLink ? window.Telegram.WebApp.openTelegramLink(url) : window.open(url, '_blank');
+                          }}
+                          className="bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-black py-1.5 px-3 rounded-xl shadow-xs"
+                        >
+                          {t.orderBtn}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </main>
+          )}
+
+          {/* TAB 5: MAIN PROFILE & SETTINGS MENU */}
+          {activeTab === 'profile' && !showLeaderboardView && (
+            <main className="p-4 space-y-4 animate-fade-in">
+              
+              {/* User Profile Card */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-teal-200 dark:border-slate-800 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <UserAvatar 
+                      src={userPhoto} 
+                      name={userName} 
+                      size="lg" 
+                      ringClass="ring-2 ring-teal-500 shadow-sm" 
+                    />
+                    <div>
+                      <h3 className="font-black text-base flex items-center gap-1.5">
+                        <span>{userName}</span>
+                        {userUsername && <span className="text-[11px] text-teal-600 dark:text-teal-400 font-semibold">@{userUsername}</span>}
+                      </h3>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] font-black bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300 px-2.5 py-0.5 rounded-full">
+                          Rank #{userRankPosition}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold">{rank.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-base font-black text-amber-500">⭐ {userStars}</span>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl text-left border border-slate-100 dark:border-slate-700">
+                  <div className="flex justify-between text-xs font-bold mb-1">
+                    <span>Rank Progression</span>
+                    <span className="text-teal-600 font-black">{Math.round((userStars / rank.next) * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div className="bg-teal-600 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (userStars / rank.next) * 100)}%` }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* CLICKABLE LEADERBOARD BUTTON CARD */}
+              <button
+                onClick={() => { setActiveTab('challenges'); setChallengeSubTab('ranks'); setShowLeaderboardView(false); }}
+                className="w-full p-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-3xl shadow-sm flex items-center justify-between text-left active:scale-[0.99] transition"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl">
+                    🏆
+                  </div>
+                  <div>
+                    <h4 className="font-black text-sm">{t.viewLeaderboard}</h4>
+                    <p className="text-[11px] text-teal-100">{t.leaderboardSub}</p>
+                  </div>
+                </div>
+                <span className="text-lg font-black">→</span>
+              </button>
+
+              {/* Wallet Balances Card */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-black text-sm">{t.wallet}</h3>
+                  <button 
+                    onClick={() => { setShowTopUp(true); setTopUpStep(1); }} 
+                    className="text-xs bg-teal-600 hover:bg-teal-700 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-xs transition"
+                  >
+                    {t.topUp}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <div className="text-[10px] text-slate-400 font-bold">💵 Cash Balance</div>
+                    <div className="text-base font-black mt-0.5">{walletETB} ETB</div>
+                  </div>
+
+                  <div className="bg-slate-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <div className="text-[10px] text-slate-400 font-bold">⭐ {t.starsBalance}</div>
+                    <div className="text-base font-black mt-0.5">{userStars} Stars</div>
+                  </div>
+                </div>
+
+                {/* Redeem Voucher Input */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t.redeemTitle}</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. TENA200"
+                      value={voucherCodeInput}
+                      onChange={(e) => setVoucherCodeInput(e.target.value)}
+                      className="flex-1 p-2.5 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs uppercase font-black bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                    <button
+                      onClick={handleRedeemVoucher}
+                      className="px-4 py-2.5 bg-teal-600 text-white text-xs font-black rounded-2xl shadow-xs"
+                    >
+                      {t.redeemBtn}
+                    </button>
+                  </div>
+                  {voucherFeedback && <p className="text-[11px] font-bold">{voucherFeedback}</p>}
+                </div>
+              </div>
+
+              {/* Settings Menu */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+                <h3 className="font-black text-sm">{t.settings}</h3>
+                
+                <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-bold">
+                  <span>🌙 {t.darkMode}</span>
+                  <button 
+                    onClick={() => setDarkMode(!darkMode)} 
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition ${darkMode ? 'bg-teal-600' : 'bg-slate-300'}`}
+                  >
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition ${darkMode ? 'translate-x-5' : ''}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-bold">
+                  <span>🌐 {t.language}</span>
+                  <button 
+                    onClick={() => setLang(lang === 'en' ? 'am' : 'en')}
+                    className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"
+                  >
+                    {lang === 'en' ? 'አማርኛ (Amharic)' : 'English'}
+                  </button>
+                </div>
+
+                {/* Test Level Up Preview Button */}
+                <div className="pt-1 flex items-center justify-between text-xs font-bold">
+                  <span>✨ {t.testLevelUp}</span>
+                  <button
+                    onClick={() => {
+                      const nextStars = rank.next || (userStars + 50);
+                      updateStars(nextStars - userStars);
+                    }}
+                    className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-teal-500 hover:from-amber-600 hover:to-teal-600 text-white font-black rounded-xl shadow-xs active:scale-95 transition"
+                  >
+                    {t.testLevelUp.split(' ')[0]} 🚀
+                  </button>
+                </div>
+              </div>
+            </main>
+          )}
+
+          {/* DEDICATED FULL LEADERBOARD VIEW */}
+          {activeTab === 'profile' && showLeaderboardView && (
+            <main className="p-4 space-y-4 animate-fade-in">
+              
+              <button
+                onClick={() => setShowLeaderboardView(false)}
+                className="flex items-center gap-1 text-xs font-black text-teal-600 dark:text-teal-400 bg-white dark:bg-slate-900 px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs"
+              >
+                {t.backToProfile}
+              </button>
+
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-black tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <span>{t.leaderboard}</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                        <span>{t.liveIndicator}</span>
+                      </span>
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-semibold">
+                      {allMembers.length} {t.activeCommunity} • {isSyncingLeaderboard ? t.syncing : t.liveSync}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => fetchLiveCloudLeaderboard()}
+                    disabled={isSyncingLeaderboard}
+                    className="flex items-center gap-1 text-[11px] font-black text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900 px-3 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800 transition active:scale-95 disabled:opacity-50"
+                  >
+                    <span className={isSyncingLeaderboard ? "animate-spin" : ""}>🔄</span>
+                    <span>{t.refreshLeaderboard}</span>
+                  </button>
+                </div>
+
+                <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex justify-between">
+                  {['daily', 'weekly', 'monthly'].map((period) => (
+                    <button
+                      key={period}
+                      onClick={() => setLeaderboardTimeframe(period)}
+                      className={`flex-1 py-1.5 rounded-xl text-xs font-black capitalize transition ${
+                        leaderboardTimeframe === period
+                          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                          : 'text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      {t[period] || period}
+                    </button>
+                  ))}
+                </div>
+
+                {/* CINEMATIC & COLORFUL 3D PODIUM */}
+                <div className="flex items-end justify-center gap-2 pt-8 pb-3 px-1">
+                  
+                  {/* #2 Left: Silver */}
+                  <div className="flex-1 flex flex-col items-center">
+                    {top2 ? (
+                      <>
+                        <div className="relative mb-2 flex flex-col items-center">
+                          <div className="p-1 rounded-full bg-gradient-to-tr from-slate-300 via-slate-100 to-slate-400 silver-aura">
+                            <UserAvatar 
+                              src={typeof top2.avatar === 'string' && top2.avatar.startsWith('http') ? top2.avatar : (top2.isCurrentUser ? userPhoto : null)} 
+                              name={top2.name} 
+                              size="podium2" 
+                              ringClass="ring-2 ring-white dark:ring-slate-800"
+                              fallbackEmoji="🥈"
+                            />
+                          </div>
+                          <span className="absolute -top-3 text-lg filter drop-shadow">🥈</span>
+                        </div>
+                        <div className="text-xs font-black text-slate-800 dark:text-slate-200 text-center line-clamp-1 max-w-[90px]">
+                          {top2.name}
+                        </div>
+                        {top2.username && <span className="text-[9px] text-slate-400 font-semibold line-clamp-1">@{top2.username}</span>}
+                        <div className="text-[11px] text-slate-600 dark:text-slate-300 font-black mt-0.5">⭐ {top2.score}</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative mb-2 flex flex-col items-center">
+                          <div className="w-12 h-12 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-200/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 text-sm">
+                            ⚡
+                          </div>
+                          <span className="absolute -top-3 text-sm filter drop-shadow">🥈</span>
+                        </div>
+                        <div className="text-[11px] font-bold text-slate-400 text-center line-clamp-1">
+                          Open Slot
+                        </div>
+                        <span className="text-[9px] text-slate-400 font-medium">Challenger</span>
+                        <div className="text-[10px] text-slate-400 font-bold mt-0.5">-</div>
+                      </>
+                    )}
+                    
+                    {/* 3D Silver Pedestal */}
+                    <div className="pedestal-silver w-full rounded-t-2xl flex flex-col items-center justify-between p-2 text-slate-100 font-black shadow-lg mt-2 relative">
+                      <div className="shimmer-layer" />
+                      <span className="text-2xl drop-shadow-md z-10">2</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-slate-800/40 text-slate-100 px-2 py-0.5 rounded-full z-10">
+                        2nd Place
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* #1 Center: Tall Gold Champion */}
+                  <div className="flex-1 flex flex-col items-center z-10">
+                    <div className="relative mb-2 flex flex-col items-center">
+                      {/* Floating Crown */}
+                      <span className="absolute -top-7 text-3xl crown-animated filter drop-shadow-lg z-20">👑</span>
+                      
+                      {/* Pulsing Gold Aura & Ring */}
+                      <div className="p-1.5 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-500 gold-aura">
+                        <UserAvatar 
+                          src={typeof top1.avatar === 'string' && top1.avatar.startsWith('http') ? top1.avatar : (top1.isCurrentUser ? userPhoto : null)} 
+                          name={top1.name} 
+                          size="podium1" 
+                          ringClass="ring-3 ring-amber-300 dark:ring-amber-400"
+                          fallbackEmoji="👑"
+                        />
+                      </div>
+                      
+                      {/* Sparkles */}
+                      <span className="absolute -right-2 top-0 text-sm sparkle-effect">✨</span>
+                      <span className="absolute -left-2 bottom-2 text-sm sparkle-effect" style={{ animationDelay: '1s' }}>⭐</span>
+                    </div>
+                    
+                    <div className="text-xs font-black text-amber-600 dark:text-amber-400 text-center line-clamp-1 max-w-[100px]">
+                      {top1.name}
+                    </div>
+                    {top1.username && <span className="text-[9px] text-amber-500/80 font-semibold line-clamp-1">@{top1.username}</span>}
+                    <div className="text-xs text-amber-600 dark:text-amber-400 font-black mt-0.5">⭐ {top1.score}</div>
+                    
+                    {/* 3D Gold Pedestal */}
+                    <div className="pedestal-gold w-full rounded-t-2xl flex flex-col items-center justify-between p-2.5 text-amber-950 font-black shadow-xl mt-2 relative">
+                      <div className="shimmer-layer" />
+                      <span className="text-3xl drop-shadow-md z-10 text-white font-black">1</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-amber-900/60 text-amber-100 px-2 py-0.5 rounded-full z-10 shadow-xs">
+                        Champion 👑
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* #3 Right: Bronze */}
+                  <div className="flex-1 flex flex-col items-center">
+                    {top3 ? (
+                      <>
+                        <div className="relative mb-2 flex flex-col items-center">
+                          <div className="p-1 rounded-full bg-gradient-to-tr from-amber-600 via-orange-400 to-amber-700 bronze-aura">
+                            <UserAvatar 
+                              src={typeof top3.avatar === 'string' && top3.avatar.startsWith('http') ? top3.avatar : (top3.isCurrentUser ? userPhoto : null)} 
+                              name={top3.name} 
+                              size="podium3" 
+                              ringClass="ring-2 ring-white dark:ring-slate-800"
+                              fallbackEmoji="🥉"
+                            />
+                          </div>
+                          <span className="absolute -top-3 text-lg filter drop-shadow">🥉</span>
+                        </div>
+                        <div className="text-xs font-black text-slate-800 dark:text-slate-200 text-center line-clamp-1 max-w-[90px]">
+                          {top3.name}
+                        </div>
+                        {top3.username && <span className="text-[9px] text-slate-400 font-semibold line-clamp-1">@{top3.username}</span>}
+                        <div className="text-[11px] text-orange-600 dark:text-orange-400 font-black mt-0.5">⭐ {top3.score}</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative mb-2 flex flex-col items-center">
+                          <div className="w-10 h-10 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-200/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 text-sm">
+                            ✨
+                          </div>
+                          <span className="absolute -top-3 text-sm filter drop-shadow">🥉</span>
+                        </div>
+                        <div className="text-[11px] font-bold text-slate-400 text-center line-clamp-1">
+                          Open Slot
+                        </div>
+                        <span className="text-[9px] text-slate-400 font-medium">Challenger</span>
+                        <div className="text-[10px] text-slate-400 font-bold mt-0.5">-</div>
+                      </>
+                    )}
+                    
+                    {/* 3D Bronze Pedestal */}
+                    <div className="pedestal-bronze w-full rounded-t-2xl flex flex-col items-center justify-between p-2 text-orange-100 font-black shadow-lg mt-2 relative">
+                      <div className="shimmer-layer" />
+                      <span className="text-2xl drop-shadow-md z-10">3</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-amber-950/40 text-orange-100 px-2 py-0.5 rounded-full z-10">
+                        3rd Place
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* BOTTOM COMMUNITY LIST SHEET (04, 05, 06...) */}
+                <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-3 space-y-2 border border-slate-100 dark:border-slate-700">
+                  {remainingMembers.map((member, idx) => {
+                    const rankNum = idx + 4;
+                    const formattedNum = rankNum < 10 ? `0${rankNum}` : String(rankNum);
+                    const isYou = member.isCurrentUser;
+
+                    return (
+                      <div
+                        key={member.id || `member_${idx}`}
+                        className={`p-2.5 rounded-xl border flex items-center justify-between transition ${
+                          isYou 
+                            ? 'bg-teal-50 dark:bg-teal-950/60 border-teal-400 ring-1 ring-teal-400 shadow-xs' 
+                            : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="text-xs font-mono font-black text-slate-400 w-5">
+                            {formattedNum}
+                          </span>
+                          
+                          <UserAvatar 
+                            src={typeof member.avatar === 'string' && member.avatar.startsWith('http') ? member.avatar : (member.isCurrentUser ? userPhoto : null)}
+                            name={member.name}
+                            size="sm"
+                            fallbackEmoji={member.avatar || "👤"}
+                            ringClass={isYou ? "ring-2 ring-teal-500" : ""}
+                          />
+
+                          <div>
+                            <div className="text-xs font-black flex items-center gap-1.5">
+                              <span>{member.name}</span>
+                              {isYou && <span className="text-[9px] bg-teal-600 text-white px-1.5 py-0.2 rounded-full font-black">YOU</span>}
+                            </div>
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1.5">
+                              {member.username && <span>@{member.username}</span>}
+                              <span>•</span>
+                              <span>{member.badge}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="text-xs font-black text-teal-700 dark:text-teal-300">
+                          ⭐ {member.score}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+              </div>
+            </main>
+          )}
+
+          {/* 👑 HIDDEN ADMIN MODAL */}
+          {showAdminPanel && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <div className="bg-white dark:bg-slate-900 w-full max-w-md max-h-[85vh] rounded-t-3xl sm:rounded-3xl p-6 space-y-4 shadow-2xl overflow-y-auto">
+                <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">👑</span>
+                    <h3 className="font-black text-sm">Super Admin Dashboard</h3>
+                  </div>
+                  <button onClick={() => setShowAdminPanel(false)} className="text-slate-400 font-black p-1">✕</button>
+                </div>
+
+                <div className="p-4 bg-teal-50 dark:bg-teal-950/50 rounded-2xl border border-teal-200 dark:border-teal-800 space-y-2.5">
+                  <h4 className="text-xs font-black text-teal-900 dark:text-teal-200">🎟️ Generate Voucher for Customer</h4>
+                  <div className="flex gap-2">
+                    <select
+                      value={adminGenType}
+                      onChange={(e) => setAdminGenType(e.target.value)}
+                      className="p-2 text-xs border rounded-xl bg-white dark:bg-slate-900 font-bold"
+                    >
+                      <option value="etb">ETB Cash</option>
+                      <option value="stars">Wellness Stars</option>
+                      <option value="book">Unlock Book</option>
+                    </select>
+
+                    {adminGenType !== 'book' && (
+                      <input
+                        type="number"
+                        value={adminGenAmount}
+                        onChange={(e) => setAdminGenAmount(e.target.value)}
+                        className="w-24 p-2 text-xs border rounded-xl bg-white dark:bg-slate-900 font-bold"
+                        placeholder="Amount"
+                      />
+                    )}
+
+                    <button
+                      onClick={handleAdminGenerateCode}
+                      className="flex-1 py-2 bg-teal-600 text-white rounded-xl text-xs font-black shadow-xs"
+                    >
+                      Create
+                    </button>
+                  </div>
+
+                  {adminGeneratedCode && (
+                    <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-2 rounded-xl border border-teal-300 mt-2">
+                      <span className="font-mono font-bold text-xs text-teal-700">{adminGeneratedCode}</span>
+                      <button
+                        onClick={() => copyToClipboard(adminGeneratedCode)}
+                        className="px-2.5 py-1 bg-teal-600 text-white rounded-lg text-[10px] font-black"
+                      >
+                        {copyNotice === adminGeneratedCode ? 'Copied! ✓' : '📋 Copy'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 space-y-2">
+                  <h4 className="text-xs font-black">⚡ Quick Balance Adjustment</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => {
+                        const next = walletETB + 200;
+                        setWalletETB(next);
+                        localStorage.setItem(getKey('etb'), String(next));
+                      }}
+                      className="py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black"
+                    >
+                      +200 ETB
+                    </button>
+                    <button
+                      onClick={() => updateStars(300)}
+                      className="py-2 bg-amber-500 text-white rounded-xl text-[10px] font-black"
+                    >
+                      +300 Stars
+                    </button>
+                    <button
+                      onClick={() => {
+                        setWalletETB(0);
+                        localStorage.setItem(getKey('etb'), '0');
+                      }}
+                      className="py-2 bg-red-600 text-white rounded-xl text-[10px] font-black"
+                    >
+                      Reset ETB
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TELEBIRR / CBE TOP-UP MODAL */}
+          {showTopUp && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-4 shadow-2xl">
+                <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div>
+                    <span className="text-[10px] font-black text-teal-600 uppercase">Step {topUpStep} of 2</span>
+                    <h3 className="font-black text-sm">💵 Add Balance to Wallet</h3>
+                  </div>
+                  <button onClick={() => setShowTopUp(false)} className="text-slate-400 font-black p-1">✕</button>
+                </div>
+
+                {topUpStep === 1 && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-black text-slate-700 dark:text-slate-300">Choose Deposit Amount (ETB)</label>
+                      <div className="grid grid-cols-4 gap-2 mt-2">
+                        {["100", "200", "500", "1000"].map(val => (
+                          <button
+                            key={val}
+                            onClick={() => setTopUpAmount(val)}
+                            className={`py-2.5 rounded-2xl text-xs font-black border transition ${
+                              topUpAmount === val 
+                                ? 'bg-teal-600 text-white border-teal-600 shadow-xs' 
+                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200'
+                            }`}
+                          >
+                            {val} ETB
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="number"
+                        placeholder="Custom amount..."
+                        value={topUpAmount}
+                        onChange={(e) => setTopUpAmount(e.target.value)}
+                        className="w-full mt-2.5 p-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs bg-slate-50 dark:bg-slate-800 font-black focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => setTopUpStep(2)}
+                      className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-2xl text-xs shadow-sm"
+                    >
+                      Next: Choose Payment Method →
+                    </button>
+                  </div>
+                )}
+
+                {topUpStep === 2 && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setSelectedMethod('telebirr')}
+                        className={`p-3 rounded-2xl border flex flex-col items-center justify-center transition ${
+                          selectedMethod === 'telebirr' 
+                            ? 'bg-amber-50 border-amber-400 text-amber-900 font-black' 
+                            : 'border-slate-200 text-slate-500'
+                        }`}
+                      >
+                        <span className="text-base">📱</span>
+                        <span className="text-xs mt-1">Telebirr</span>
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedMethod('cbe')}
+                        className={`p-3 rounded-2xl border flex flex-col items-center justify-center transition ${
+                          selectedMethod === 'cbe' 
+                            ? 'bg-purple-50 border-purple-400 text-purple-900 font-black' 
+                            : 'border-slate-200 text-slate-500'
+                        }`}
+                      >
+                        <span className="text-base">🏦</span>
+                        <span className="text-xs mt-1">CBE Bank</span>
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] text-slate-400 uppercase font-black">
+                          {selectedMethod === 'telebirr' ? 'Telebirr Phone' : 'CBE Account'}
+                        </span>
+                        <span className="text-[10px] font-black text-teal-600">Amount: {topUpAmount} ETB</span>
+                      </div>
+
+                      <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <span className="font-mono font-black text-xs tracking-wider">
+                          {selectedMethod === 'telebirr' ? '0911000000' : '1000123456789'}
+                        </span>
+                        <button
+                          onClick={() => copyToClipboard(selectedMethod === 'telebirr' ? '0911000000' : '1000123456789')}
+                          className="px-3 py-1 bg-teal-600 text-white rounded-lg text-[10px] font-black"
+                        >
+                          {copyNotice === (selectedMethod === 'telebirr' ? '0911000000' : '1000123456789') ? t.copied : '📋 Copy'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Enter Txn ID / Slip No."
+                      value={txnReference}
+                      onChange={(e) => setTxnReference(e.target.value)}
+                      className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setTopUpStep(1)}
+                        className="px-4 py-3 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black rounded-2xl text-xs"
+                      >
+                        ← Back
+                      </button>
+                      <button
+                        onClick={handleDepositSubmit}
+                        className="flex-1 py-3 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-2xl text-xs shadow-sm"
+                      >
+                        Confirm & Send on Telegram
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* PROTECTED BOOK READER */}
+          {selectedBook && (
+            <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col select-none overflow-hidden" onContextMenu={(e) => e.preventDefault()}>
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950 shadow-xs">
+                <div>
+                  <span className="text-[10px] font-black text-teal-600 uppercase">🔒 Protected Reader</span>
+                  <h2 className="text-xs font-black line-clamp-1">{selectedBook.title}</h2>
+                </div>
+                <button onClick={() => setSelectedBook(null)} className="px-3 py-1 bg-slate-200 dark:bg-slate-800 text-xs font-black rounded-xl">
+                  ✕ {t.close}
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5 relative space-y-6 max-w-lg mx-auto">
+                <div className="absolute inset-0 pointer-events-none opacity-5 flex flex-col justify-around items-center font-black text-xs rotate-[-25deg]">
+                  <span>Licensed to @{userName} • Tena Holistic</span>
+                  <span>Licensed to @{userName} • Tena Holistic</span>
+                </div>
+
+                {selectedBook.chapters.map((ch, idx) => (
+                  <div key={idx} className="space-y-2 border-b border-slate-100 dark:border-slate-800 pb-5">
+                    <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">{ch.title}</h3>
+                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">{ch.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ARTICLE READER MODAL */}
+          {selectedArticle && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <div className="bg-white dark:bg-slate-900 w-full max-w-lg max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-fade-in">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
+                  <span className="text-xs font-black text-teal-700 dark:text-teal-400 uppercase bg-teal-50 px-2.5 py-0.5 rounded-full">
+                    📖 {selectedArticle.category}
+                  </span>
+                  <button onClick={() => setSelectedArticle(null)} className="text-slate-400 font-black text-sm p-1">✕</button>
+                </div>
+
+                <div className="p-5 overflow-y-auto space-y-4 text-xs leading-relaxed">
+                  <img src={selectedArticle.thumbnail} alt={selectedArticle.title} className="w-full h-40 object-cover rounded-2xl" />
+                  <h2 className="text-base font-black">{selectedArticle.title}</h2>
+                  <div className="whitespace-pre-line border-t border-slate-100 dark:border-slate-800 pt-2 text-slate-700 dark:text-slate-300">
+                    {selectedArticle.content}
+                  </div>
+                </div>
+
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex gap-2">
+                  <button
+                    onClick={() => window.Telegram?.WebApp?.openLink ? window.Telegram.WebApp.openLink(selectedArticle.youtubeUrl) : window.open(selectedArticle.youtubeUrl, '_blank')}
+                    className="flex-1 bg-red-600 text-white text-xs font-black py-3 rounded-2xl shadow-xs"
+                  >
+                    ▶ {t.watchYoutube}
+                  </button>
+                  <button onClick={() => setSelectedArticle(null)} className="px-5 py-3 bg-slate-200 dark:bg-slate-800 text-xs font-black rounded-2xl">
+                    {t.close}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* LEVEL UP POP-UP NOTIFICATION MODAL WITH ANIMATIONS */}
+          {levelUpModal && (
+            <div 
+              id="level-up-modal-overlay"
+              className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 select-none"
+              onClick={(e) => {
+                if (e.target.id === "level-up-modal-overlay") setLevelUpModal(null);
+              }}
+            >
+              <div className="bg-white dark:bg-slate-900 border-2 border-amber-300/80 dark:border-amber-500/40 rounded-3xl p-6 w-full max-w-sm relative text-center overflow-hidden shadow-2xl level-up-modal-card">
+                
+                {/* Radiant Background Sunlight Ray Effect */}
+                <div 
+                  className="absolute -top-24 -left-24 -right-24 h-64 pointer-events-none opacity-20 level-up-ray"
+                  style={{
+                    background: 'conic-gradient(from 0deg at 50% 50%, #f59e0b 0deg, transparent 30deg, #14b8a6 60deg, transparent 90deg, #ec4899 120deg, transparent 150deg, #f59e0b 180deg, transparent 210deg, #14b8a6 240deg, transparent 270deg, #ec4899 300deg, transparent 330deg, #f59e0b 360deg)'
+                  }}
+                />
+
+                {/* Close 'X' button */}
+                <button
+                  onClick={() => setLevelUpModal(null)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-black w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center z-20 transition active:scale-90"
+                >
+                  ✕
+                </button>
+
+                {/* Sparkling Header Badge */}
+                <div className="relative z-10 flex justify-center mb-1">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-black tracking-wider uppercase bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 text-amber-950 shadow-md ribbon-glow">
+                    <span>✨</span>
+                    <span>{t.levelUpTitle}</span>
+                    <span>✨</span>
+                  </span>
+                </div>
+
+                {/* Big Upgraded Tier Icon & Glow */}
+                <div className="relative z-10 my-4 flex justify-center items-center">
+                  <div className="relative p-3 rounded-full bg-gradient-to-tr from-amber-400 via-teal-400 to-emerald-500 rank-glow-badge">
+                    <div className="w-20 h-20 rounded-full bg-white dark:bg-slate-950 flex items-center justify-center text-4xl shadow-inner badge-flip-in">
+                      {levelUpModal.newRank.icon}
+                    </div>
+                  </div>
+                  {/* Floating particle stars */}
+                  <span className="absolute -top-1 right-14 text-lg floating-star-anim" style={{ animationDelay: '0.2s' }}>⭐</span>
+                  <span className="absolute bottom-0 left-14 text-lg floating-star-anim" style={{ animationDelay: '0.7s' }}>✨</span>
+                </div>
+
+                {/* Rank Title & Subtitle */}
+                <div className="relative z-10 space-y-1 mb-4">
+                  <div className="text-[11px] font-black uppercase tracking-widest text-teal-600 dark:text-teal-400">
+                    {t.newTierUnlocked}
+                  </div>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">
+                    {levelUpModal.newRank.name}
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">
+                    {levelUpModal.newRank.title || levelUpModal.newRank.name}
+                  </p>
+                </div>
+
+                {/* Progression Stepper: Old Rank ➔ New Rank */}
+                <div className="relative z-10 bg-slate-50 dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/80 mb-4 flex items-center justify-around text-xs font-black">
+                  <div className="flex flex-col items-center opacity-60">
+                    <span className="text-base">{levelUpModal.oldRank?.icon || "🥉"}</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">{levelUpModal.oldRank?.name || "Bronze I"}</span>
+                  </div>
+                  <div className="text-amber-500 font-black text-base animate-pulse">➔</div>
+                  <div className="flex flex-col items-center text-teal-700 dark:text-teal-300">
+                    <span className="text-xl">{levelUpModal.newRank.icon}</span>
+                    <span className="text-[11px] font-black mt-0.5">{levelUpModal.newRank.name}</span>
+                  </div>
+                </div>
+
+                {/* Perks Checklist */}
+                <div className="relative z-10 text-left bg-teal-50/60 dark:bg-teal-950/30 p-3 rounded-2xl border border-teal-100 dark:border-teal-900/50 mb-5 space-y-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <span className="text-teal-600">✓</span>
+                    <span>{t.benefit1}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-teal-600">✓</span>
+                    <span>{t.benefit2}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-black">
+                    <span>🎯</span>
+                    <span>{t.benefit3} {levelUpModal.newRank.next} Stars ({Math.max(0, levelUpModal.newRank.next - levelUpModal.stars)} needed)</span>
+                  </div>
+                </div>
+
+                {/* Claim / Continue Button */}
+                <button
+                  onClick={() => {
+                    setLevelUpModal(null);
+                    if (typeof confetti === 'function') {
+                      confetti({
+                        particleCount: 30,
+                        spread: 60,
+                        origin: { y: 0.7 },
+                        colors: ['#14b8a6', '#f59e0b', '#10b981']
+                      });
+                    }
+                  }}
+                  className="relative z-10 w-full py-3.5 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-600 hover:from-teal-700 hover:to-emerald-700 text-white font-black text-xs rounded-2xl shadow-lg shadow-teal-600/30 active:scale-95 transition"
+                >
+                  {t.claimReward}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 5-TAB BOTTOM NAVIGATION */}
+          <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 py-2.5 px-4 flex justify-around z-40 shadow-lg">
+            <button onClick={() => { setActiveTab('tracker'); setShowLeaderboardView(false); }} className={`flex flex-col items-center text-[10px] font-black ${activeTab === 'tracker' ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400'}`}>
+              <span className="text-base">📊</span>
+              <span>{t.tracker}</span>
+            </button>
+
+            <button onClick={() => { setActiveTab('challenges'); setChallengeSubTab('ranks'); setShowLeaderboardView(false); }} className={`flex flex-col items-center text-[10px] font-black ${activeTab === 'challenges' ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400'}`}>
+              <span className="text-base">🏆</span>
+              <span>{t.challenges}</span>
+            </button>
+
+            <button onClick={() => { setActiveTab('hub'); setShowLeaderboardView(false); }} className={`flex flex-col items-center text-[10px] font-black ${activeTab === 'hub' ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400'}`}>
+              <span className="text-base">📚</span>
+              <span>{t.hub}</span>
+            </button>
+
+            <button onClick={() => { setActiveTab('store'); setShowLeaderboardView(false); }} className={`flex flex-col items-center text-[10px] font-black ${activeTab === 'store' ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400'}`}>
+              <span className="text-base">🛍️</span>
+              <span>{t.store}</span>
+            </button>
+
+            <button onClick={() => { setActiveTab('profile'); setShowLeaderboardView(false); }} className={`flex flex-col items-center text-[10px] font-black ${activeTab === 'profile' ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400'}`}>
+              <span className="text-base">👤</span>
+              <span>{t.profile}</span>
+            </button>
+          </nav>
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
