@@ -8,6 +8,18 @@
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+  <!-- Immediate theme sync script to prevent flash of wrong theme -->
+  <script>
+    try {
+      var savedTheme = localStorage.getItem('tena_app_theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.colorScheme === 'dark')) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch(e) {}
+  </script>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -602,8 +614,31 @@
     }
 
     function App() {
-      const [lang, setLang] = useState('en');
-      const [darkMode, setDarkMode] = useState(false);
+      const [lang, setLang] = useState(() => {
+        try {
+          return localStorage.getItem('tena_app_lang') || 'en';
+        } catch(e) {
+          return 'en';
+        }
+      });
+      const [darkMode, setDarkMode] = useState(() => {
+        try {
+          const savedTheme = localStorage.getItem('tena_app_theme');
+          if (savedTheme === 'dark') return true;
+          if (savedTheme === 'light') return false;
+          if (window.Telegram?.WebApp?.colorScheme === 'dark') return true;
+          return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        } catch(e) {
+          return false;
+        }
+      });
+
+      // App Initial Network & Leaderboard Sync Bootloader
+      const [isAppBooting, setIsAppBooting] = useState(true);
+      const [bootProgress, setBootProgress] = useState(25);
+      const [bootStageText, setBootStageText] = useState('Connecting to Live Health Network...');
+      const [bootOnlineFound, setBootOnlineFound] = useState(1);
+
       const [activeTab, setActiveTab] = useState('tracker');
       const [challengeSubTab, setChallengeSubTab] = useState('ranks'); // 'ranks' or 'challenges'
       const [showLeaderboardView, setShowLeaderboardView] = useState(false);
@@ -675,12 +710,22 @@
       const getKey = (key) => `tena_${userId}_${key}`;
 
       useEffect(() => {
-        if (darkMode) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
+        try {
+          if (darkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('tena_app_theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('tena_app_theme', 'light');
+          }
+        } catch(e) {}
       }, [darkMode]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem('tena_app_lang', lang);
+        } catch(e) {}
+      }, [lang]);
 
       // Initialization: Load user data and trigger cloud sync
       useEffect(() => {
@@ -1096,10 +1141,45 @@
         } catch(e) {}
       };
 
-      // Real-time broadcast, polling, and online heartbeat
+      // Real-time broadcast, polling, and online heartbeat + Initial Startup Bootloader
       useEffect(() => {
-        fetchLiveCloudLeaderboard();
-        syncMyScoreToCloud(); // Initial online announcement
+        let isMounted = true;
+
+        async function performInitialBootSync() {
+          setBootProgress(25);
+          setBootStageText('Connecting to Live Health Network...');
+
+          // 1. Initial online announcement to server & cloud endpoints
+          try {
+            setBootProgress(50);
+            setBootStageText('Broadcasting your in-app presence...');
+            await syncMyScoreToCloud();
+          } catch(e) {}
+
+          // 2. Fetch fresh community leaderboard & online participants
+          try {
+            setBootProgress(80);
+            setBootStageText('Loading live community & ranked participants...');
+            await fetchLiveCloudLeaderboard();
+          } catch(e) {}
+
+          if (!isMounted) return;
+
+          setBootProgress(100);
+          setBootStageText('🟢 Synchronized! Launching Tena...');
+
+          // Smoothly release splash loader
+          setTimeout(() => {
+            if (isMounted) setIsAppBooting(false);
+          }, 450);
+        }
+
+        performInitialBootSync();
+
+        // Safety fallback: guaranteed open after 2.4s maximum
+        const fallbackTimer = setTimeout(() => {
+          if (isMounted) setIsAppBooting(false);
+        }, 2400);
 
         let bc = null;
         if (window.BroadcastChannel) {
@@ -1125,6 +1205,8 @@
         }, 8000);
 
         return () => {
+          isMounted = false;
+          clearTimeout(fallbackTimer);
           if (bc) bc.close();
           clearInterval(syncInterval);
           clearInterval(heartbeatInterval);
@@ -1385,7 +1467,7 @@
         if (!m) return false;
         if (m.isCurrentUser) return true;
         const diff = now - (Number(m.lastActive) || 0);
-        return diff < 180000; // Active within last 3 minutes
+        return diff < 300000; // Active within last 5 minutes
       };
 
       const getActiveStatusText = (m) => {
@@ -1393,7 +1475,7 @@
         if (m.isCurrentUser) return "🟢 Online in App (You)";
         const diff = now - (Number(m.lastActive) || 0);
         if (diff < 60000) return "🟢 Online in App";
-        if (diff < 180000) return `🟢 Online (${Math.round(diff/1000)}s ago)`;
+        if (diff < 300000) return `🟢 Online (${Math.round(diff/1000)}s ago)`;
         if (diff < 3600000) return `Active ${Math.round(diff/60000)}m ago`;
         if (diff < 86400000) return `Active ${Math.round(diff/3600000)}h ago`;
         return "Joined App";
@@ -1475,11 +1557,110 @@
       const rank = getRankInfo(userStars);
       const currentChallengeWeek = MONTH_CHALLENGES.find(c => c.week === viewingWeek);
 
+      // INITIAL BOOTLOADER / NETWORK SYNC SCREEN
+      if (isAppBooting) {
+        return (
+          <div className="max-w-md mx-auto min-h-screen bg-gradient-to-b from-slate-50 via-teal-50/40 to-emerald-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-800 dark:text-slate-100 flex flex-col justify-between p-6 select-none font-sans">
+            {/* Top Brand Tag */}
+            <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-500 flex items-center justify-center text-white text-sm shadow-sm font-bold">
+                  🌿
+                </div>
+                <div>
+                  <h1 className="text-xs font-black tracking-tight text-slate-900 dark:text-white">TENA HOLISTIC</h1>
+                  <p className="text-[9px] text-teal-600 dark:text-teal-400 font-bold uppercase tracking-wider">Health & Longevity</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/90 dark:bg-slate-800/90 border border-teal-100 dark:border-slate-700 rounded-full text-[10px] font-bold text-teal-700 dark:text-teal-300 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Live Sync</span>
+              </div>
+            </div>
+
+            {/* Center Content */}
+            <div className="flex flex-col items-center text-center my-auto space-y-6">
+              {/* Outer pulsing glow with Icon */}
+              <div className="relative">
+                <div className="absolute -inset-4 bg-teal-500/20 dark:bg-teal-500/10 rounded-full blur-xl animate-pulse"></div>
+                <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-tr from-teal-600 via-emerald-500 to-teal-500 p-1 shadow-xl shadow-teal-600/20">
+                  <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[22px] flex flex-col items-center justify-center">
+                    <span className="text-4xl animate-bounce-subtle">🌿</span>
+                  </div>
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-xl shadow-md border-2 border-white dark:border-slate-900">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* User Identity Preview */}
+              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl p-4 border border-teal-100 dark:border-slate-800 shadow-sm w-full max-w-xs space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <UserAvatar src={userPhoto} name={userName} size="md" />
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></span>
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-black truncate">{userName}</p>
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 rounded-md">YOU</span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {userUsername ? `@${userUsername}` : `ID: ${userId}`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress & Live Sync Status */}
+              <div className="w-full max-w-xs space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+                  <span className="flex items-center gap-1.5 truncate max-w-[210px]">
+                    <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping"></span>
+                    <span className="truncate">{bootStageText}</span>
+                  </span>
+                  <span className="text-teal-600 dark:text-teal-400 font-mono font-black">{bootProgress}%</span>
+                </div>
+
+                <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+                  <div 
+                    className="h-full bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-400 rounded-full transition-all duration-300 ease-out shadow-xs"
+                    style={{ width: `${bootProgress}%` }}
+                  ></div>
+                </div>
+
+                <div className="flex items-center justify-around pt-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1">🟢 Live Online List Ready</span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">🏆 Ranked Roster Synced</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="w-full max-w-xs mx-auto space-y-3 pb-2">
+              <button
+                onClick={() => setIsAppBooting(false)}
+                className="w-full py-3.5 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-600 hover:from-teal-700 hover:to-emerald-700 text-white font-black text-xs rounded-2xl shadow-lg shadow-teal-600/25 active:scale-95 transition flex items-center justify-center gap-2"
+              >
+                <span>Continue to Tena App</span>
+                <span>→</span>
+              </button>
+              <p className="text-[10px] text-center text-slate-400 dark:text-slate-500">
+                Connected to Telegram Mini App • Real-time Multi-user Protocol
+              </p>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="max-w-md mx-auto min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col relative pb-24 font-sans">
           
           {/* MINT TOP APP BAR */}
-          <header className="bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/10 backdrop-blur-md border-b border-teal-100 dark:border-slate-800 px-5 py-3.5 sticky top-0 z-30 flex items-center justify-between">
+          <header className="bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/10 backdrop-blur-md border-b border-teal-100 dark:border-slate-800 px-4 py-3 sticky top-0 z-30 flex items-center justify-between">
             
             {/* Secret 5-Tap on Leaf Logo */}
             <div 
@@ -1499,28 +1680,37 @@
                   }
                 }
               }}
-              className="flex items-center space-x-2.5 cursor-pointer active:scale-95 transition"
+              className="flex items-center space-x-2 cursor-pointer active:scale-95 transition"
             >
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 flex items-center justify-center text-white font-bold text-base shadow-sm">
+              <div className="w-8 h-8 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                 🌿
               </div>
               <div>
-                <h1 className="text-sm font-black tracking-tight">{t.appName}</h1>
-                <p className="text-[10px] text-teal-700 dark:text-teal-400 font-semibold">Addis Ababa, Ethiopia 🇪🇹</p>
+                <h1 className="text-xs font-black tracking-tight">{t.appName}</h1>
+                <p className="text-[9px] text-teal-700 dark:text-teal-400 font-semibold">Addis Ababa, Ethiopia 🇪🇹</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {/* Quick Theme Toggle Button (Persisted) */}
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="w-7 h-7 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-700 dark:text-amber-300 text-xs rounded-full border border-teal-100 dark:border-slate-700 shadow-xs active:scale-95 transition"
+                title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {darkMode ? "☀️" : "🌙"}
+              </button>
+
               <button
                 onClick={() => setLang(lang === 'en' ? 'am' : 'en')}
-                className="px-3 py-1 bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-300 text-xs font-black rounded-full border border-teal-100 dark:border-slate-700 shadow-xs"
+                className="px-2.5 py-1 bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-300 text-[11px] font-black rounded-full border border-teal-100 dark:border-slate-700 shadow-xs active:scale-95 transition"
               >
-                {lang === 'en' ? 'አማርኛ' : 'English'}
+                {lang === 'en' ? 'አማርኛ' : 'EN'}
               </button>
 
               <button
                 onClick={() => { setActiveTab('challenges'); setChallengeSubTab('ranks'); }}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-300 text-xs font-black border border-teal-100 dark:border-slate-700 shadow-xs active:scale-95 transition"
+                className="flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-300 text-[11px] font-black border border-teal-100 dark:border-slate-700 shadow-xs active:scale-95 transition"
                 title="View Community Leaderboard"
               >
                 <UserAvatar src={userPhoto} name={userName} size="xs" ringClass="ring-1 ring-teal-500" />
