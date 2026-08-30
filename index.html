@@ -226,9 +226,24 @@
     const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
     const ADMIN_CONFIG = {
-      adminUsernames: ["YourTelegramUsername", "admin"],
+      adminUsernames: ["beki2_0", "beki2.0", "bekiye", "bekiye41", "admin", "YourTelegramUsername"],
+      adminPhones: ["0955991938", "+251955991938", "251955991938", "955991938"],
       masterPin: "7788"
     };
+
+    function isUserAdmin(username, phone) {
+      const normUser = (username || "").toLowerCase().replace(/^@/, "").trim();
+      const normPhone = (phone || "").replace(/\D/g, "");
+
+      const matchUsername = normUser && ADMIN_CONFIG.adminUsernames.some(u => u.toLowerCase().replace(/^@/, "").trim() === normUser);
+      const matchPhone = normPhone && ADMIN_CONFIG.adminPhones.some(p => {
+        const cleanP = p.replace(/\D/g, "");
+        return (normPhone.endsWith(cleanP) || cleanP.endsWith(normPhone) || (cleanP.length >= 9 && normPhone.includes(cleanP.slice(-9))));
+      });
+
+      const savedAdminMode = localStorage.getItem('tena_is_admin_mode') === 'true';
+      return Boolean(matchUsername || matchPhone || savedAdminMode);
+    }
 
     const TRANSLATIONS = {
       en: {
@@ -296,7 +311,22 @@
         benefit2: "Climbed higher on Global Leaderboard",
         benefit3: "Next Milestone:",
         claimReward: "Claim & Continue 🚀",
-        testLevelUp: "⚡ Test Level Up Animation"
+        testLevelUp: "⚡ Test Level Up Animation",
+        addGuide: "➕ Add Guide / Video",
+        adminGuideBadge: "👑 Admin Content Manager",
+        editGuide: "Edit Content",
+        deleteGuide: "Delete",
+        deleteConfirm: "Are you sure you want to remove this article from Health Hub?",
+        uploadDoc: "Upload Document File (.docx, .doc, .txt, .md, .pdf)",
+        uploadImage: "Upload Image",
+        pasteImageUrl: "Or paste image URL",
+        contentLink: "Video / Content Link (YouTube, Telegram, etc.)",
+        readGuideText: "Guide Text (Markdown formatted)",
+        saveAndPublish: "Publish to Health Hub 🚀",
+        saveChanges: "Save Changes",
+        snippetPlaceholder: "Brief 1-2 sentence preview...",
+        titlePlaceholder: "e.g. Natural Blood Sugar Stabilization & Herbs",
+        customCategoryPrompt: "+ Add New Custom Category"
       },
       am: {
         appName: "ጤና ሆሊስቲክ",
@@ -363,7 +393,22 @@
         benefit2: "በደረጃ ሰንጠረዥ ላይ ከፍ ብለዋል",
         benefit3: "ቀጣይ ግብ:",
         claimReward: "ተቀበልና ቀጥል 🚀",
-        testLevelUp: "⚡ የደረጃ እድገትን ሞክር"
+        testLevelUp: "⚡ የደረጃ እድገትን ሞክር",
+        addGuide: "➕ አዲስ መመሪያ / ቪዲዮ ጨምር",
+        adminGuideBadge: "👑 የአድሚን መመሪያ ማስተዳደሪያ",
+        editGuide: "ይዘትን አድስ",
+        deleteGuide: "ሰርዝ",
+        deleteConfirm: "ይህን መመሪያ ከጤና መረጃ መሰረዝ ይፈልጋሉ?",
+        uploadDoc: "ሰነድ ፋይል ጫን (.docx, .doc, .txt, .md, .pdf)",
+        uploadImage: "ፎቶ ጫን",
+        pasteImageUrl: "ወይም የፎቶ ሊንክ አስገባ",
+        contentLink: "የቪዲዮ ወይም የይዘት ሊንክ (YouTube, Telegram, etc.)",
+        readGuideText: "የመመሪያው ጽሑፍ (Markdown)",
+        saveAndPublish: "ወደ የጤና መረጃ ይለጥፉ 🚀",
+        saveChanges: "ለውጦችን መዝግብ",
+        snippetPlaceholder: "አጭር የ1-2 ዓረፍተ ነገር ማጠቃለያ...",
+        titlePlaceholder: "ለምሳሌ፡ የተፈጥሮ የስኳር ማስተካከያ እና እፅዋት",
+        customCategoryPrompt: "+ አዲስ የተለየ ምድብ ጨምር"
       }
     };
 
@@ -541,6 +586,7 @@
       let uid = deviceUid;
       let uname = "Friend";
       let uusername = "";
+      let uphone = localStorage.getItem('tena_user_phone') || "";
       let uphoto = null;
 
       // 1. Direct window.Telegram.WebApp object
@@ -560,6 +606,10 @@
           if (tg.initDataUnsafe?.user?.username) {
             uusername = tg.initDataUnsafe.user.username;
           }
+          if (tg.initDataUnsafe?.user?.phone_number) {
+            uphone = tg.initDataUnsafe.user.phone_number;
+            localStorage.setItem('tena_user_phone', uphone);
+          }
           if (tg.initDataUnsafe?.user?.photo_url) {
             uphoto = tg.initDataUnsafe.user.photo_url;
             localStorage.setItem(`tena_${uid}_photo`, uphoto);
@@ -574,6 +624,10 @@
               if (uObj.id) uid = String(uObj.id);
               if (uObj.first_name) uname = uObj.last_name ? `${uObj.first_name} ${uObj.last_name}` : uObj.first_name;
               if (uObj.username) uusername = uObj.username;
+              if (uObj.phone_number || uObj.phone) {
+                uphone = uObj.phone_number || uObj.phone;
+                localStorage.setItem('tena_user_phone', uphone);
+              }
               if (uObj.photo_url) {
                 uphoto = uObj.photo_url;
                 localStorage.setItem(`tena_${uid}_photo`, uphoto);
@@ -597,6 +651,10 @@
             if (uObj.id) uid = String(uObj.id);
             if (uObj.first_name) uname = uObj.last_name ? `${uObj.first_name} ${uObj.last_name}` : uObj.first_name;
             if (uObj.username) uusername = uObj.username;
+            if (uObj.phone_number || uObj.phone) {
+              uphone = uObj.phone_number || uObj.phone;
+              localStorage.setItem('tena_user_phone', uphone);
+            }
             if (uObj.photo_url) {
               uphoto = uObj.photo_url;
               localStorage.setItem(`tena_${uid}_photo`, uphoto);
@@ -609,8 +667,12 @@
         const savedPhoto = localStorage.getItem(`tena_${uid}_photo`);
         if (savedPhoto) uphoto = savedPhoto;
       }
+      if (!uphone) {
+        const savedPhone = localStorage.getItem(`tena_${uid}_phone`) || localStorage.getItem('tena_user_phone');
+        if (savedPhone) uphone = savedPhone;
+      }
 
-      return { uid, uname, uusername, uphoto };
+      return { uid, uname, uusername, uphone, uphoto };
     }
 
     function App() {
@@ -650,8 +712,14 @@
       const [userId, setUserId] = useState(initProfile.uid);
       const [userName, setUserName] = useState(initProfile.uname);
       const [userUsername, setUserUsername] = useState(initProfile.uusername);
+      const [userPhone, setUserPhone] = useState(initProfile.uphone);
       const [userPhoto, setUserPhoto] = useState(initProfile.uphoto);
-      const [isAdmin, setIsAdmin] = useState(ADMIN_CONFIG.adminUsernames.includes(initProfile.uusername));
+      const [isAdmin, setIsAdmin] = useState(() => isUserAdmin(initProfile.uusername, initProfile.uphone));
+
+      // Re-evaluate admin rights whenever username or phone changes
+      useEffect(() => {
+        setIsAdmin(isUserAdmin(userUsername, userPhone));
+      }, [userUsername, userPhone]);
 
       // Shared Dynamic Community Leaderboard
       const [communityList, setCommunityList] = useState([]);
@@ -669,9 +737,50 @@
       const prevRankTierRef = useRef(null);
       const isInitializedRef = useRef(false);
 
+      // Dynamic Health Hub Articles & Content Management State
+      const [articles, setArticles] = useState(() => {
+        try {
+          const saved = localStorage.getItem('tena_custom_articles');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch(e) {}
+        return HEALTH_ARTICLES;
+      });
+
+      const [showArticleEditor, setShowArticleEditor] = useState(false);
+      const [editingArticleId, setEditingArticleId] = useState(null);
+      const [articleEditorTab, setArticleEditorTab] = useState('edit'); // 'edit' or 'preview'
+      const [articleForm, setArticleForm] = useState({
+        id: '',
+        title: '',
+        category: 'Cancer Care',
+        customCategory: '',
+        snippet: '',
+        youtubeUrl: '',
+        thumbnail: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80',
+        readTime: '4 min',
+        content: '',
+        docName: ''
+      });
+      const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+      const [docUploadStatus, setDocUploadStatus] = useState('');
+      const [isSavingArticle, setIsSavingArticle] = useState(false);
+
       // Search & Filters
       const [selectedCat, setSelectedCat] = useState("All");
       const [searchQuery, setSearchQuery] = useState("");
+
+      // Dynamically computed category list
+      const dynamicCategories = useMemo(() => {
+        const base = ["All", "Cancer Care", "Diabetes", "Weight Loss", "Heart Health", "Herbs & Nutrition", "Longevity", "General Wellness"];
+        const set = new Set(base);
+        articles.forEach(a => {
+          if (a.category && a.category.trim()) set.add(a.category.trim());
+        });
+        return Array.from(set);
+      }, [articles]);
 
       // User Isolated State (Default is clean 0 for all new users)
       const [userStars, setUserStars] = useState(0);
@@ -863,7 +972,248 @@
         }
 
         fetchLiveCloudLeaderboard();
+        fetchLiveArticles();
       }, []);
+
+      // HEALTH HUB ARTICLES CLOUD SYNC & MANAGEMENT
+      const fetchLiveArticles = async () => {
+        try {
+          const res = await fetch('/api/articles', { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success && Array.isArray(data.articles) && data.articles.length > 0) {
+              setArticles(data.articles);
+              localStorage.setItem('tena_custom_articles', JSON.stringify(data.articles));
+            }
+          }
+        } catch(e) {}
+      };
+
+      const openCreateArticleModal = () => {
+        setEditingArticleId(null);
+        setArticleEditorTab('edit');
+        setDocUploadStatus('');
+        setArticleForm({
+          id: '',
+          title: '',
+          category: 'Cancer Care',
+          customCategory: '',
+          snippet: '',
+          youtubeUrl: '',
+          thumbnail: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80',
+          readTime: '4 min',
+          content: `### Key Holistic Principles\n1. **Core Recommendation**: Add fresh herbs like ginger, garlic, or moringa.\n2. **Daily Practice**: Drink 2L of water and take a 20-minute daily walk.\n3. **Long-Term Protection**: Avoid refined seed oils and excess refined sugars.`,
+          docName: ''
+        });
+        setShowArticleEditor(true);
+      };
+
+      const openEditArticleModal = (art) => {
+        setEditingArticleId(art.id);
+        setArticleEditorTab('edit');
+        setDocUploadStatus(art.docName ? `Attached file: ${art.docName}` : '');
+        setArticleForm({
+          id: art.id,
+          title: art.title || '',
+          category: art.category || 'Cancer Care',
+          customCategory: '',
+          snippet: art.snippet || '',
+          youtubeUrl: art.youtubeUrl || '',
+          thumbnail: art.thumbnail || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80',
+          readTime: art.readTime || '4 min',
+          content: art.content || '',
+          docName: art.docName || ''
+        });
+        setShowArticleEditor(true);
+      };
+
+      const handleDocFileUpload = async (file) => {
+        if (!file) return;
+        setIsUploadingDoc(true);
+        setDocUploadStatus(`Reading ${file.name}...`);
+
+        try {
+          const ext = file.name.split('.').pop().toLowerCase();
+          
+          // Auto-fill title if empty
+          if (!articleForm.title) {
+            const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+            setArticleForm(prev => ({ ...prev, title: cleanName.charAt(0).toUpperCase() + cleanName.slice(1) }));
+          }
+
+          if (ext === 'txt' || ext === 'md' || file.type.startsWith('text/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const text = e.target.result;
+              setArticleForm(prev => ({
+                ...prev,
+                content: text,
+                docName: file.name
+              }));
+              setDocUploadStatus(`✓ Successfully extracted text from ${file.name} (${text.length} characters)`);
+              setIsUploadingDoc(false);
+            };
+            reader.onerror = () => {
+              setDocUploadStatus(`❌ Failed to read ${file.name}`);
+              setIsUploadingDoc(false);
+            };
+            reader.readAsText(file);
+          } else if (ext === 'docx') {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const buffer = e.target.result;
+                const textDecoder = new TextDecoder("utf-8", { fatal: false });
+                const rawStr = textDecoder.decode(new Uint8Array(buffer));
+                
+                let paras = [];
+                // Look for Word Document XML text nodes
+                const tMatches = rawStr.match(/<w:t[^>]*>(.*?)<\/w:t>/g);
+                if (tMatches && tMatches.length > 0) {
+                  let currentPara = [];
+                  tMatches.forEach(tag => {
+                    const cleanText = tag.replace(/<\/?w:t[^>]*>/g, '');
+                    if (cleanText) currentPara.push(cleanText);
+                  });
+                  const joined = currentPara.join(' ');
+                  if (joined.length > 20) {
+                    paras.push(joined);
+                  }
+                }
+
+                let extracted = "";
+                if (paras.length > 0) {
+                  extracted = paras.join('\n\n');
+                } else {
+                  // Fallback: extract visible unicode / ascii chunks
+                  const words = rawStr.replace(/<[^>]+>/g, ' ').match(/[\w\u1200-\u137F\s.,!?:;'\-]{4,}/g);
+                  if (words) {
+                    extracted = words.join(' ').replace(/\s+/g, ' ').trim();
+                  }
+                }
+
+                if (!extracted || extracted.length < 10) {
+                  extracted = `### Guide from ${file.name}\n\n(Document file attached: **${file.name}**)\n\nYou can refine and format your guide content below:`;
+                }
+
+                setArticleForm(prev => ({
+                  ...prev,
+                  content: extracted,
+                  docName: file.name
+                }));
+                setDocUploadStatus(`✓ Extracted content from Word Document (${file.name})`);
+              } catch(err) {
+                setDocUploadStatus(`✓ Attached document (${file.name})`);
+                setArticleForm(prev => ({ ...prev, docName: file.name }));
+              }
+              setIsUploadingDoc(false);
+            };
+            reader.readAsArrayBuffer(file);
+          } else {
+            // General doc / pdf upload
+            setArticleForm(prev => ({
+              ...prev,
+              docName: file.name,
+              content: prev.content || `### Guide from ${file.name}\n\n(Attached Document: **${file.name}**)`
+            }));
+            setDocUploadStatus(`✓ Document attached: ${file.name}`);
+            setIsUploadingDoc(false);
+          }
+        } catch(err) {
+          setDocUploadStatus(`Error reading file: ${err.message}`);
+          setIsUploadingDoc(false);
+        }
+      };
+
+      const handleImageUpload = (file) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          alert('Please upload an image file (PNG, JPG, WebP)');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setArticleForm(prev => ({
+            ...prev,
+            thumbnail: e.target.result
+          }));
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const handleSaveArticle = async () => {
+        if (!articleForm.title.trim()) {
+          alert('Please enter an article title');
+          return;
+        }
+
+        setIsSavingArticle(true);
+        const finalCategory = (articleForm.category === '__custom__' && articleForm.customCategory.trim()) 
+          ? articleForm.customCategory.trim() 
+          : (articleForm.category || 'General Wellness');
+
+        const finalArticle = {
+          id: editingArticleId || `art_${Date.now()}`,
+          title: articleForm.title.trim(),
+          category: finalCategory,
+          snippet: articleForm.snippet.trim() || articleForm.title.trim(),
+          youtubeUrl: articleForm.youtubeUrl.trim(),
+          thumbnail: articleForm.thumbnail.trim() || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80',
+          readTime: articleForm.readTime.trim() || '4 min',
+          content: articleForm.content.trim(),
+          docName: articleForm.docName || null,
+          updatedAt: Date.now()
+        };
+
+        // 1. Update State & Local Storage Immediately
+        setArticles(prev => {
+          const index = prev.findIndex(a => a.id === finalArticle.id);
+          let updated;
+          if (index >= 0) {
+            updated = [...prev];
+            updated[index] = finalArticle;
+          } else {
+            updated = [finalArticle, ...prev];
+          }
+          try {
+            localStorage.setItem('tena_custom_articles', JSON.stringify(updated));
+          } catch(e) {}
+          return updated;
+        });
+
+        // 2. Persist to Node.js Backend Server
+        try {
+          await fetch('/api/articles/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(finalArticle)
+          });
+        } catch(e) {}
+
+        setIsSavingArticle(false);
+        setShowArticleEditor(false);
+        setEditingArticleId(null);
+      };
+
+      const handleDeleteArticle = async (id) => {
+        if (!window.confirm(t.deleteConfirm || 'Are you sure you want to remove this article from Health Hub?')) return;
+        
+        setArticles(prev => {
+          const updated = prev.filter(a => a.id !== id);
+          try {
+            localStorage.setItem('tena_custom_articles', JSON.stringify(updated));
+          } catch(e) {}
+          return updated;
+        });
+
+        try {
+          await fetch('/api/articles/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+        } catch(e) {}
+      };
 
       // SMART UNION MERGE TO PREVENT ANY PLAYER LOSS
       const mergeCommunityLists = (listA, listB) => {
@@ -2567,71 +2917,214 @@
           {/* TAB 3: HEALTH HUB */}
           {activeTab === 'hub' && (
             <main className="p-4 space-y-4 animate-fade-in">
-              <div>
-                <h2 className="text-base font-black">{t.guidesTitle}</h2>
-                <p className="text-xs text-slate-500">{t.guidesSub}</p>
-              </div>
-
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t.searchPlaceholder}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-xs font-medium"
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-3 text-slate-400 text-xs font-black">✕</button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-black">{t.guidesTitle}</h2>
+                  <p className="text-xs text-slate-500">{t.guidesSub}</p>
+                </div>
+                {isAdmin && (
+                  <button
+                    onClick={openCreateArticleModal}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-black px-3.5 py-2 rounded-2xl text-xs flex items-center gap-1.5 shadow-sm transition shrink-0"
+                  >
+                    <span>➕</span>
+                    <span>{t.addGuide}</span>
+                  </button>
                 )}
               </div>
 
-              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                {HEALTH_CATEGORIES.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCat(cat)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-black whitespace-nowrap transition ${
-                      selectedCat === cat 
-                        ? 'bg-teal-600 text-white shadow-sm' 
-                        : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-4">
-                {HEALTH_ARTICLES.filter(a => selectedCat === "All" || a.category === selectedCat).map(article => (
-                  <div key={article.id} className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-sm">
-                    <div className="relative h-44">
-                      <img src={article.thumbnail} alt={article.title} className="w-full h-full object-cover" />
-                      <span className="absolute top-3 left-3 bg-teal-600/90 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-xs">
-                        {article.category}
-                      </span>
-                    </div>
-
-                    <div className="p-4 space-y-2.5">
-                      <h3 className="font-black text-sm leading-snug">{article.title}</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{article.snippet}</p>
-
-                      <div className="pt-1 flex gap-2">
-                        <button
-                          onClick={() => window.Telegram?.WebApp?.openLink ? window.Telegram.WebApp.openLink(article.youtubeUrl) : window.open(article.youtubeUrl, '_blank')}
-                          className="flex-1 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-black py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1"
-                        >
-                          ▶ {t.watchYoutube}
-                        </button>
-                        <button
-                          onClick={() => setSelectedArticle(article)}
-                          className="flex-1 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 font-black py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1"
-                        >
-                          📖 {t.readGuide}
-                        </button>
-                      </div>
+              {isAdmin && (
+                <div className="bg-gradient-to-r from-teal-900/90 to-emerald-900/90 text-white p-3.5 rounded-2xl border border-teal-500/30 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">👑</span>
+                    <div>
+                      <h4 className="text-xs font-black">{t.adminGuideBadge}</h4>
+                      <p className="text-[10px] text-teal-200">You can add videos, images, write guides, or extract doc files</p>
                     </div>
                   </div>
-                ))}
+                  <button
+                    onClick={openCreateArticleModal}
+                    className="bg-white text-teal-950 font-black text-[11px] px-3 py-1.5 rounded-xl shadow-xs shrink-0"
+                  >
+                    {t.addGuide}
+                  </button>
+                </div>
+              )}
+
+              {/* SEARCH & CATEGORY DROPDOWN CONTROLS */}
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                  <div className="relative sm:col-span-7">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t.searchPlaceholder}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-9 pr-8 py-3 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-xs font-medium"
+                    />
+                    <span className="absolute left-3.5 top-3 text-xs text-slate-400">🔍</span>
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-3 text-slate-400 text-xs font-black hover:text-slate-600">✕</button>
+                    )}
+                  </div>
+
+                  <div className="relative sm:col-span-5">
+                    <div className="relative flex items-center">
+                      <span className="absolute left-3.5 text-xs pointer-events-none text-teal-600 dark:text-teal-400">📁</span>
+                      <select
+                        value={selectedCat}
+                        onChange={(e) => setSelectedCat(e.target.value)}
+                        className="w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-9 pr-8 py-3 text-xs font-black text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-xs cursor-pointer"
+                      >
+                        {dynamicCategories.map(cat => {
+                          const count = cat === 'All' ? articles.length : articles.filter(a => a.category === cat).length;
+                          return (
+                            <option key={cat} value={cat}>
+                              {cat === 'All' ? '🌟 All Categories' : cat} ({count})
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <span className="absolute right-3.5 text-slate-400 text-[10px] pointer-events-none">▼</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Filter Chips & Reset */}
+                {(selectedCat !== 'All' || searchQuery) && (
+                  <div className="flex items-center justify-between text-[11px] bg-teal-50/70 dark:bg-teal-950/40 px-3 py-1.5 rounded-xl border border-teal-200/50 dark:border-teal-900/50 animate-fade-in">
+                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                      <span className="font-semibold text-[10px] uppercase text-teal-700 dark:text-teal-300">Filtering:</span>
+                      {selectedCat !== 'All' && (
+                        <span className="font-black text-teal-800 dark:text-teal-200 bg-teal-100 dark:bg-teal-900/80 px-2 py-0.5 rounded-md">
+                          {selectedCat}
+                        </span>
+                      )}
+                      {searchQuery && (
+                        <span className="font-bold text-slate-700 dark:text-slate-200 bg-white/80 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                          "{searchQuery}"
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => { setSelectedCat('All'); setSearchQuery(''); }}
+                      className="text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-white font-black text-[10.5px] hover:underline flex items-center gap-0.5"
+                    >
+                      <span>✕</span>
+                      <span>Reset</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* ARTICLE CARDS LIST */}
+              <div className="space-y-4">
+                {articles
+                  .filter(a => {
+                    const matchCat = selectedCat === "All" || a.category === selectedCat;
+                    if (!matchCat) return false;
+                    if (!searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase();
+                    return (
+                      (a.title && a.title.toLowerCase().includes(q)) ||
+                      (a.snippet && a.snippet.toLowerCase().includes(q)) ||
+                      (a.content && a.content.toLowerCase().includes(q)) ||
+                      (a.category && a.category.toLowerCase().includes(q)) ||
+                      (a.docName && a.docName.toLowerCase().includes(q))
+                    );
+                  })
+                  .map(article => (
+                    <div key={article.id} className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-sm transition hover:shadow-md">
+                      <div className="relative h-44 bg-slate-100 dark:bg-slate-800">
+                        {article.thumbnail ? (
+                          <img src={article.thumbnail} alt={article.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl bg-teal-900/20 text-teal-600">🌿</div>
+                        )}
+                        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                          <span className="bg-teal-600/90 backdrop-blur-xs text-white text-[10px] font-black px-3 py-1 rounded-full shadow-xs">
+                            {article.category}
+                          </span>
+                          {article.readTime && (
+                            <span className="bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+                              ⏱️ {article.readTime}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Admin Edit/Delete Floating Controls */}
+                        {isAdmin && (
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/70 backdrop-blur-xs p-1 rounded-2xl shadow-md">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditArticleModal(article);
+                              }}
+                              className="bg-amber-500 hover:bg-amber-600 text-white p-1.5 rounded-xl text-xs transition"
+                              title="Edit Guide"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteArticle(article.id);
+                              }}
+                              className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-xl text-xs transition"
+                              title="Delete Guide"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        )}
+
+                        {article.docName && (
+                          <div className="absolute bottom-2.5 left-3 bg-slate-900/80 backdrop-blur-xs text-slate-200 text-[10px] font-bold px-2.5 py-0.5 rounded-lg flex items-center gap-1">
+                            <span>📄</span>
+                            <span className="truncate max-w-[200px]">{article.docName}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-4 space-y-2.5">
+                        <h3 className="font-black text-sm leading-snug">{article.title}</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{article.snippet}</p>
+
+                        <div className="pt-1 flex gap-2">
+                          {article.youtubeUrl && (
+                            <button
+                              onClick={() => window.Telegram?.WebApp?.openLink ? window.Telegram.WebApp.openLink(article.youtubeUrl) : window.open(article.youtubeUrl, '_blank')}
+                              className="flex-1 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 font-black py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1 transition"
+                            >
+                              ▶ {t.watchYoutube}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setSelectedArticle(article)}
+                            className={`flex-1 ${article.youtubeUrl ? 'bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300' : 'bg-teal-600 text-white shadow-xs'} hover:opacity-90 font-black py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1 transition`}
+                          >
+                            📖 {t.readGuide}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                {articles.filter(a => selectedCat === "All" || a.category === selectedCat).length === 0 && (
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 text-center border border-slate-200 dark:border-slate-800 space-y-3">
+                    <span className="text-4xl">📚</span>
+                    <h3 className="font-black text-sm">No Guides Found</h3>
+                    <p className="text-xs text-slate-500">There are no guides in this category yet.</p>
+                    {isAdmin && (
+                      <button
+                        onClick={openCreateArticleModal}
+                        className="bg-teal-600 text-white font-black text-xs px-4 py-2 rounded-2xl shadow-xs"
+                      >
+                        {t.addGuide}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </main>
           )}
@@ -2856,6 +3349,22 @@
                     {t.testLevelUp.split(' ')[0]} 🚀
                   </button>
                 </div>
+
+                {/* Admin Access Option */}
+                {isAdmin && (
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold">
+                    <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+                      <span>👑</span>
+                      <span>Super Admin (@beki2_0)</span>
+                    </div>
+                    <button
+                      onClick={() => setShowAdminPanel(true)}
+                      className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-black text-xs rounded-xl shadow-xs active:scale-95 transition"
+                    >
+                      Open Admin Tools ⚙️
+                    </button>
+                  </div>
+                )}
               </div>
             </main>
           )}
@@ -3199,6 +3708,45 @@
                   <button onClick={() => setShowAdminPanel(false)} className="text-slate-400 font-black p-1">✕</button>
                 </div>
 
+                {/* Master Admin Identity Card */}
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-200">🛡️ Authorized Admin Credentials</span>
+                    </div>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAdmin ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800'}`}>
+                      {isAdmin ? '✅ Active Admin' : '⚠️ Guest Mode'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                      <span className="text-slate-400 block text-[9.5px]">Target Username:</span>
+                      <span className="font-mono font-bold text-teal-700 dark:text-teal-400">@beki2_0</span>
+                    </div>
+                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                      <span className="text-slate-400 block text-[9.5px]">Target Phone:</span>
+                      <span className="font-mono font-bold text-teal-700 dark:text-teal-400">0955991938</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                    <span>Current: <strong>@{userUsername || 'unlinked'}</strong> ({userPhone || 'no phone'})</span>
+                    {!isAdmin && (
+                      <button
+                        onClick={() => {
+                          setUserUsername('beki2_0');
+                          setUserPhone('0955991938');
+                          localStorage.setItem('tena_user_phone', '0955991938');
+                          localStorage.setItem('tena_is_admin_mode', 'true');
+                          setIsAdmin(true);
+                        }}
+                        className="text-teal-600 dark:text-teal-400 font-bold hover:underline"
+                      >
+                        Set as @beki2_0
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="p-4 bg-teal-50 dark:bg-teal-950/50 rounded-2xl border border-teal-200 dark:border-teal-800 space-y-2.5">
                   <h4 className="text-xs font-black text-teal-900 dark:text-teal-200">🎟️ Generate Voucher for Customer</h4>
                   <div className="flex gap-2">
@@ -3272,6 +3820,29 @@
                       Reset ETB
                     </button>
                   </div>
+                </div>
+
+                <div className="p-3.5 bg-gradient-to-r from-teal-900 to-emerald-950 text-white rounded-2xl border border-teal-500/30 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black">📚 Health Hub Content & Docs</h4>
+                    <span className="text-[10px] bg-teal-800 text-teal-200 px-2 py-0.5 rounded-full font-bold">
+                      {articles.length} Guides Active
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-teal-200">
+                    Add new health guides, YouTube/Telegram links, upload Word docs (.docx) or edit existing remedies.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowAdminPanel(false);
+                      setActiveTab('hub');
+                      openCreateArticleModal();
+                    }}
+                    className="w-full py-2.5 bg-teal-500 hover:bg-teal-400 text-teal-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs transition"
+                  >
+                    <span>➕</span>
+                    <span>Add New Health Hub Guide / Doc</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -3437,28 +4008,339 @@
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
               <div className="bg-white dark:bg-slate-900 w-full max-w-lg max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-fade-in">
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
-                  <span className="text-xs font-black text-teal-700 dark:text-teal-400 uppercase bg-teal-50 px-2.5 py-0.5 rounded-full">
-                    📖 {selectedArticle.category}
-                  </span>
-                  <button onClick={() => setSelectedArticle(null)} className="text-slate-400 font-black text-sm p-1">✕</button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-teal-700 dark:text-teal-400 uppercase bg-teal-50 dark:bg-teal-950/60 px-2.5 py-1 rounded-full">
+                      📖 {selectedArticle.category}
+                    </span>
+                    {selectedArticle.readTime && (
+                      <span className="text-[10px] text-slate-500 font-bold">
+                        ⏱️ {selectedArticle.readTime}
+                      </span>
+                    )}
+                  </div>
+                  <button onClick={() => setSelectedArticle(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-black text-sm p-1">✕</button>
                 </div>
 
                 <div className="p-5 overflow-y-auto space-y-4 text-xs leading-relaxed">
-                  <img src={selectedArticle.thumbnail} alt={selectedArticle.title} className="w-full h-40 object-cover rounded-2xl" />
-                  <h2 className="text-base font-black">{selectedArticle.title}</h2>
-                  <div className="whitespace-pre-line border-t border-slate-100 dark:border-slate-800 pt-2 text-slate-700 dark:text-slate-300">
+                  {selectedArticle.thumbnail && (
+                    <img src={selectedArticle.thumbnail} alt={selectedArticle.title} className="w-full h-44 object-cover rounded-2xl shadow-xs" />
+                  )}
+                  <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 leading-snug">{selectedArticle.title}</h2>
+                  
+                  {selectedArticle.docName && (
+                    <div className="bg-teal-50/80 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900 p-2.5 rounded-xl flex items-center gap-2 text-teal-800 dark:text-teal-300">
+                      <span className="text-base">📄</span>
+                      <div>
+                        <p className="font-bold text-[11px]">Guide Source Document</p>
+                        <p className="text-[10px] opacity-80">{selectedArticle.docName}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="whitespace-pre-line border-t border-slate-100 dark:border-slate-800 pt-3 text-slate-700 dark:text-slate-300 space-y-2 text-xs leading-relaxed font-normal">
                     {selectedArticle.content}
                   </div>
                 </div>
 
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex gap-2">
-                  <button
-                    onClick={() => window.Telegram?.WebApp?.openLink ? window.Telegram.WebApp.openLink(selectedArticle.youtubeUrl) : window.open(selectedArticle.youtubeUrl, '_blank')}
-                    className="flex-1 bg-red-600 text-white text-xs font-black py-3 rounded-2xl shadow-xs"
-                  >
-                    ▶ {t.watchYoutube}
-                  </button>
+                  {selectedArticle.youtubeUrl && (
+                    <button
+                      onClick={() => window.Telegram?.WebApp?.openLink ? window.Telegram.WebApp.openLink(selectedArticle.youtubeUrl) : window.open(selectedArticle.youtubeUrl, '_blank')}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-black py-3 rounded-2xl shadow-xs flex items-center justify-center gap-1.5 transition"
+                    >
+                      <span>▶</span>
+                      <span>{t.watchYoutube}</span>
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        const artToEdit = selectedArticle;
+                        setSelectedArticle(null);
+                        openEditArticleModal(artToEdit);
+                      }}
+                      className="px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-2xl shadow-xs flex items-center gap-1"
+                    >
+                      <span>✏️</span>
+                      <span>{t.editGuide}</span>
+                    </button>
+                  )}
                   <button onClick={() => setSelectedArticle(null)} className="px-5 py-3 bg-slate-200 dark:bg-slate-800 text-xs font-black rounded-2xl">
+                    {t.close}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ADMIN ARTICLE & DOCUMENT MANAGER MODAL */}
+          {showArticleEditor && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <div className="bg-white dark:bg-slate-900 w-full max-w-xl max-h-[90vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-800">
+                {/* Header */}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-teal-950 text-white">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">👑</span>
+                    <div>
+                      <h3 className="font-black text-sm">{editingArticleId ? t.editGuide : t.addGuide}</h3>
+                      <p className="text-[10px] text-teal-300">Publish guides, upload Word/Text docs, or link videos</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowArticleEditor(false)} className="text-white/80 hover:text-white font-black text-sm p-1">✕</button>
+                </div>
+
+                {/* Tab selector between Edit and Live Preview */}
+                <div className="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 pt-2">
+                  <button
+                    onClick={() => setArticleEditorTab('edit')}
+                    className={`px-4 py-2 text-xs font-black border-b-2 transition ${
+                      articleEditorTab === 'edit' 
+                        ? 'border-teal-600 text-teal-600 dark:text-teal-400' 
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    ✏️ Content Details & Editor
+                  </button>
+                  <button
+                    onClick={() => setArticleEditorTab('preview')}
+                    className={`px-4 py-2 text-xs font-black border-b-2 transition ${
+                      articleEditorTab === 'preview' 
+                        ? 'border-teal-600 text-teal-600 dark:text-teal-400' 
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    👁️ Live User Preview
+                  </button>
+                </div>
+
+                {/* Form Body */}
+                <div className="p-5 overflow-y-auto space-y-4 text-xs">
+                  {articleEditorTab === 'edit' ? (
+                    <div className="space-y-4">
+                      {/* Title */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
+                          Article / Guide Title *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={t.titlePlaceholder}
+                          value={articleForm.title}
+                          onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-xs font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Category & Read Time */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
+                            Health Category
+                          </label>
+                          <select
+                            value={articleForm.category}
+                            onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })}
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-xs font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                          >
+                            {dynamicCategories.filter(c => c !== 'All').map(c => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                            <option value="__custom__">{t.customCategoryPrompt}</option>
+                          </select>
+
+                          {articleForm.category === '__custom__' && (
+                            <input
+                              type="text"
+                              placeholder="Enter new category name..."
+                              value={articleForm.customCategory}
+                              onChange={(e) => setArticleForm({ ...articleForm, customCategory: e.target.value })}
+                              className="w-full mt-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                            />
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
+                            Estimated Reading Time
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 4 min"
+                            value={articleForm.readTime}
+                            onChange={(e) => setArticleForm({ ...articleForm, readTime: e.target.value })}
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-xs font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Snippet / Short Summary */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
+                          Short Snippet / Card Summary
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder={t.snippetPlaceholder}
+                          value={articleForm.snippet}
+                          onChange={(e) => setArticleForm({ ...articleForm, snippet: e.target.value })}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-xs font-medium focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Video / External Link */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
+                          {t.contentLink}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="https://www.youtube.com/watch?v=... or https://t.me/..."
+                          value={articleForm.youtubeUrl}
+                          onChange={(e) => setArticleForm({ ...articleForm, youtubeUrl: e.target.value })}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Thumbnail Image: File Upload & URL */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
+                          Cover Image (Upload or URL)
+                        </label>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="text"
+                            placeholder="Image URL (https://...)"
+                            value={articleForm.thumbnail}
+                            onChange={(e) => setArticleForm({ ...articleForm, thumbnail: e.target.value })}
+                            className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                          />
+                          <label className="cursor-pointer bg-teal-50 dark:bg-teal-950 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 text-teal-800 dark:text-teal-300 font-bold px-3.5 py-2 rounded-2xl text-xs flex items-center justify-center gap-1 shrink-0">
+                            <span>🖼️</span>
+                            <span>{t.uploadImage}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                            />
+                          </label>
+                        </div>
+                        {articleForm.thumbnail && (
+                          <div className="mt-2 h-24 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 relative w-full sm:w-48">
+                            <img src={articleForm.thumbnail} alt="Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* DOCUMENT UPLOAD FEATURE */}
+                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/40 border border-teal-200 dark:border-teal-900 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base">📄</span>
+                            <span className="font-black text-xs text-teal-950 dark:text-teal-200">
+                              Upload Doc / Read Guide File
+                            </span>
+                          </div>
+                          <span className="text-[10px] bg-teal-200/60 dark:bg-teal-800/60 text-teal-900 dark:text-teal-200 px-2 py-0.5 rounded-full font-bold">
+                            Word (.docx) • Text • Markdown • PDF
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-teal-800/90 dark:text-teal-300/90">
+                          Upload any Word document or text file. It will automatically extract the sections directly into your guide text editor below.
+                        </p>
+
+                        <label className="cursor-pointer block text-center bg-white dark:bg-slate-900 border-2 border-dashed border-teal-400 dark:border-teal-700 hover:border-teal-600 p-3 rounded-2xl text-xs font-black text-teal-800 dark:text-teal-200 transition">
+                          {isUploadingDoc ? '⏳ Processing Document File...' : '📁 Click to Choose / Drop .docx, .doc, or .txt File'}
+                          <input
+                            type="file"
+                            accept=".docx,.doc,.txt,.md,.pdf,text/*"
+                            className="hidden"
+                            onChange={(e) => e.target.files?.[0] && handleDocFileUpload(e.target.files[0])}
+                          />
+                        </label>
+
+                        {docUploadStatus && (
+                          <div className="text-[11px] font-bold text-teal-900 dark:text-teal-300 bg-white/70 dark:bg-slate-900/70 p-2 rounded-xl border border-teal-200/60 dark:border-teal-800/60">
+                            {docUploadStatus}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* FULL GUIDE CONTENT (MARKDOWN) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-black text-slate-700 dark:text-slate-300">
+                            Full Holistic Guide & Instructions (Markdown Supported)
+                          </label>
+                          {/* Formatting helper buttons */}
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setArticleForm(prev => ({ ...prev, content: (prev.content ? prev.content + '\n\n' : '') + '### Section Heading\n' }))}
+                              className="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 rounded-md text-[10px] font-bold hover:bg-slate-300"
+                            >
+                              ### Heading
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setArticleForm(prev => ({ ...prev, content: (prev.content ? prev.content + '\n' : '') + '1. **Point**: Details here\n2. **Point**: Details here\n' }))}
+                              className="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 rounded-md text-[10px] font-bold hover:bg-slate-300"
+                            >
+                              1. Numbered
+                            </button>
+                          </div>
+                        </div>
+
+                        <textarea
+                          rows={8}
+                          placeholder={t.contentPlaceholder || "Type or paste your complete guide here..."}
+                          value={articleForm.content}
+                          onChange={(e) => setArticleForm({ ...articleForm, content: e.target.value })}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    /* LIVE PREVIEW TAB */
+                    <div className="space-y-4 p-2 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      {articleForm.thumbnail && (
+                        <img src={articleForm.thumbnail} alt={articleForm.title} className="w-full h-44 object-cover rounded-2xl shadow-xs" />
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="bg-teal-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full">
+                          {articleForm.category === '__custom__' ? (articleForm.customCategory || 'Category') : articleForm.category}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-bold">⏱️ {articleForm.readTime || '4 min'}</span>
+                        {articleForm.docName && (
+                          <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full font-bold">
+                            📄 {articleForm.docName}
+                          </span>
+                        )}
+                      </div>
+                      <h2 className="text-base font-black text-slate-900 dark:text-slate-100">{articleForm.title || 'Guide Title'}</h2>
+                      <p className="text-xs text-slate-500 italic">{articleForm.snippet || 'Card preview snippet...'}</p>
+                      
+                      <div className="border-t border-slate-200 dark:border-slate-800 pt-3 whitespace-pre-line text-xs leading-relaxed text-slate-800 dark:text-slate-200">
+                        {articleForm.content || '(No guide text typed yet. Upload a document or type above.)'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Action Buttons */}
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex gap-2">
+                  <button
+                    onClick={handleSaveArticle}
+                    disabled={isSavingArticle}
+                    className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-black text-xs py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                  >
+                    <span>{isSavingArticle ? '⏳ Saving...' : '🚀'}</span>
+                    <span>{editingArticleId ? t.saveChanges : t.saveAndPublish}</span>
+                  </button>
+                  <button
+                    onClick={() => setShowArticleEditor(false)}
+                    className="px-5 py-3 bg-slate-200 dark:bg-slate-800 text-xs font-black rounded-2xl"
+                  >
                     {t.close}
                   </button>
                 </div>
