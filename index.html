@@ -590,25 +590,66 @@
       let uusername = "";
       let uphone = "";
       let uphoto = null;
+      let udate = new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
       try {
+        // 1. Try URL parameters (Telegram Mini App URL params)
+        const params = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        
+        let tgRaw = null;
+        if (params.get('tgWebAppData')) {
+          tgRaw = params.get('tgWebAppData');
+        } else if (hashParams.get('tgWebAppData')) {
+          tgRaw = hashParams.get('tgWebAppData');
+        }
+
+        if (tgRaw) {
+          try {
+            const parsedInit = new URLSearchParams(tgRaw);
+            const userStr = parsedInit.get('user');
+            if (userStr) {
+              const uObj = JSON.parse(decodeURIComponent(userStr));
+              if (uObj.id) uid = String(uObj.id);
+              if (uObj.first_name) {
+                uname = uObj.last_name ? `${uObj.first_name} ${uObj.last_name}` : uObj.first_name;
+              }
+              if (uObj.username) uusername = uObj.username;
+              if (uObj.photo_url) uphoto = uObj.photo_url;
+            }
+            const authDate = parsedInit.get('auth_date');
+            if (authDate) {
+              const d = new Date(parseInt(authDate, 10) * 1000);
+              if (!isNaN(d.getTime())) {
+                udate = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+              }
+            }
+          } catch (pe) {}
+        }
+
+        // 2. Try window.Telegram.WebApp standard object
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
-          tg.ready();
-          tg.expand();
-          if (tg.initDataUnsafe?.user?.id) {
-            uid = String(tg.initDataUnsafe.user.id);
+          try { tg.ready(); } catch(e) {}
+          try { tg.expand(); } catch(e) {}
+
+          const tgUser = tg.initDataUnsafe?.user;
+          if (tgUser) {
+            if (tgUser.id) uid = String(tgUser.id);
+            if (tgUser.first_name) {
+              uname = tgUser.last_name
+                ? `${tgUser.first_name} ${tgUser.last_name}`
+                : tgUser.first_name;
+            }
+            if (tgUser.username) uusername = tgUser.username;
+            if (tgUser.photo_url) uphoto = tgUser.photo_url;
           }
-          if (tg.initDataUnsafe?.user?.first_name) {
-            uname = tg.initDataUnsafe.user.last_name
-              ? `${tg.initDataUnsafe.user.first_name} ${tg.initDataUnsafe.user.last_name}`
-              : tg.initDataUnsafe.user.first_name;
-          }
-          if (tg.initDataUnsafe?.user?.username) {
-            uusername = tg.initDataUnsafe.user.username;
-          }
-          if (tg.initDataUnsafe?.user?.photo_url) {
-            uphoto = tg.initDataUnsafe.user.photo_url;
+
+          if (tg.initDataUnsafe?.auth_date) {
+            const d = new Date(parseInt(tg.initDataUnsafe.auth_date, 10) * 1000);
+            if (!isNaN(d.getTime())) {
+              udate = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            }
           }
         }
       } catch(e) {}
@@ -620,7 +661,7 @@
         localStorage.setItem('tena_device_uid', uid);
       }
 
-      return { uid, uname, uusername, uphone, uphoto };
+      return { uid, uname, uusername, uphone, uphoto, udate };
     }
 
     function App() {
@@ -643,6 +684,7 @@
       const [userUsername, setUserUsername] = useState(initProfile.uusername);
       const [userPhone, setUserPhone] = useState(initProfile.uphone);
       const [userPhoto, setUserPhoto] = useState(initProfile.uphoto);
+      const [userDate, setUserDate] = useState(initProfile.udate);
       const [isAdmin, setIsAdmin] = useState(() => isUserAdmin(initProfile.uusername, initProfile.uphone));
 
       // User Wellness Stars (Preserved)
@@ -1232,19 +1274,46 @@
           return;
         }
 
+        const toSave = { ...articleForm };
         setArticles(prev => {
-          const exists = prev.some(a => a.id === articleForm.id);
+          const exists = prev.some(a => a.id === toSave.id);
           let updated;
           if (exists) {
-            updated = prev.map(a => a.id === articleForm.id ? { ...a, ...articleForm } : a);
+            updated = prev.map(a => a.id === toSave.id ? { ...a, ...toSave } : a);
           } else {
-            updated = [{ ...articleForm }, ...prev];
+            updated = [{ ...toSave }, ...prev];
           }
           localStorage.setItem('tena_articles', JSON.stringify(updated));
           return updated;
         });
 
         setIsArticleModalOpen(false);
+
+        // Broadcast change to server so all devices sync
+        const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
+        fetch('/api/articles/save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${activeToken}`
+          },
+          body: JSON.stringify(toSave)
+        })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.success) {
+            fetch('/api/articles')
+              .then(r => r.ok ? r.json() : null)
+              .then(d => {
+                if (d && d.success && Array.isArray(d.articles)) {
+                  setArticles(d.articles);
+                  localStorage.setItem('tena_articles', JSON.stringify(d.articles));
+                }
+              })
+              .catch(() => {});
+          }
+        })
+        .catch(() => {});
       };
 
       const handleDeleteArticle = (artId) => {
@@ -1257,6 +1326,32 @@
           if (selectedArticle && selectedArticle.id === artId) {
             setSelectedArticle(null);
           }
+
+          // Broadcast deletion to server for cross-device sync
+          const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
+          fetch('/api/articles/delete', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${activeToken}`
+            },
+            body: JSON.stringify({ id: artId })
+          })
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data && data.success) {
+              fetch('/api/articles')
+                .then(r => r.ok ? r.json() : null)
+                .then(d => {
+                  if (d && d.success && Array.isArray(d.articles)) {
+                    setArticles(d.articles);
+                    localStorage.setItem('tena_articles', JSON.stringify(d.articles));
+                  }
+                })
+                .catch(() => {});
+            }
+          })
+          .catch(() => {});
         }
       };
 
@@ -1294,19 +1389,51 @@
           return;
         }
 
+        const newProd = {
+          ...productForm,
+          etbPrice: Number(productForm.etbPrice) || 0,
+          usdPrice: Number(productForm.usdPrice) || 0
+        };
+
         setProducts(prev => {
-          const exists = prev.some(p => p.id === productForm.id);
+          const exists = prev.some(p => p.id === newProd.id);
           let updated;
           if (exists) {
-            updated = prev.map(p => p.id === productForm.id ? { ...p, ...productForm } : p);
+            updated = prev.map(p => p.id === newProd.id ? { ...p, ...newProd } : p);
           } else {
-            updated = [{ ...productForm }, ...prev];
+            updated = [{ ...newProd }, ...prev];
           }
           localStorage.setItem('tena_products', JSON.stringify(updated));
           return updated;
         });
 
         setIsProductModalOpen(false);
+
+        // Broadcast to server for cross-device synchronization
+        const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
+        fetch('/api/products/save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${activeToken}`
+          },
+          body: JSON.stringify(newProd)
+        })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.success) {
+            fetch('/api/products')
+              .then(r => r.ok ? r.json() : null)
+              .then(d => {
+                if (d && d.success && Array.isArray(d.products)) {
+                  setProducts(d.products);
+                  localStorage.setItem('tena_products', JSON.stringify(d.products));
+                }
+              })
+              .catch(() => {});
+          }
+        })
+        .catch(() => {});
       };
 
       const handleDeleteProduct = (prodId) => {
@@ -1319,6 +1446,32 @@
           if (orderingProduct && orderingProduct.id === prodId) {
             setOrderingProduct(null);
           }
+
+          // Broadcast deletion to server for cross-device sync
+          const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
+          fetch('/api/products/delete', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${activeToken}`
+            },
+            body: JSON.stringify({ id: prodId })
+          })
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data && data.success) {
+              fetch('/api/products')
+                .then(r => r.ok ? r.json() : null)
+                .then(d => {
+                  if (d && d.success && Array.isArray(d.products)) {
+                    setProducts(d.products);
+                    localStorage.setItem('tena_products', JSON.stringify(d.products));
+                  }
+                })
+                .catch(() => {});
+            }
+          })
+          .catch(() => {});
         }
       };
 
@@ -1392,18 +1545,42 @@
               {/* User Hero Banner */}
               <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white rounded-3xl p-5 shadow-md shadow-pink-500/15 relative overflow-hidden">
                 <div className="relative z-10 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full backdrop-blur-xs">
-                      {t.dailyReset}
-                    </span>
-                    <h2 className="text-xl font-black mt-2">{t.welcome}, {userName}! 👋</h2>
-                    <p className="text-xs text-pink-100 mt-0.5">
-                      {isVip ? "👑 VIP Active Subscriber" : "🌱 Standard Holistic Member"}
-                    </p>
+                  <div className="flex items-center space-x-3.5">
+                    {/* User Avatar with fallback */}
+                    <div className="relative shrink-0">
+                      {userPhoto ? (
+                        <img 
+                          src={userPhoto} 
+                          alt={userName} 
+                          className="w-14 h-14 rounded-2xl object-cover border-2 border-white/40 shadow-sm" 
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-xl font-black text-white shadow-sm">
+                          {userName ? userName.charAt(0).toUpperCase() : "T"}
+                        </div>
+                      )}
+                      {isVip && (
+                        <span className="absolute -top-1.5 -right-1.5 text-xs bg-amber-400 rounded-full p-0.5 shadow-xs" title="VIP Member">
+                          👑
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full backdrop-blur-xs">
+                        {t.dailyReset}
+                      </span>
+                      <h2 className="text-lg font-black mt-1 leading-tight">{t.welcome}, {userName}! 👋</h2>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-pink-100 mt-0.5">
+                        {userUsername && <span>@{userUsername}</span>}
+                        <span>•</span>
+                        <span>{userDate}</span>
+                      </div>
+                    </div>
                   </div>
                   
                   {/* Wellness Stars Badge */}
-                  <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-3 flex flex-col items-center justify-center shadow-xs min-w-[64px]">
+                  <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-3 flex flex-col items-center justify-center shadow-xs min-w-[64px] shrink-0">
                     <span className="text-lg">⭐</span>
                     <span className="text-sm font-black mt-0.5">{userStars}</span>
                     <span className="text-[9px] uppercase font-bold text-white/80">Stars</span>
@@ -1998,20 +2175,32 @@
 
               {/* USER PROFILE CARD */}
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-pink-100 dark:border-slate-800 shadow-sm flex items-center space-x-3.5">
-                <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 p-1 border-2 border-pink-400 dark:border-sky-400 shadow-sm flex items-center justify-center shrink-0">
-                  <TenaBrandLogo size={46} />
+                <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 p-0.5 border-2 border-pink-400 dark:border-sky-400 shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
+                  {userPhoto ? (
+                    <img src={userPhoto} alt={userName} className="w-full h-full object-cover rounded-xl" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-tr from-pink-500 to-sky-500 rounded-xl flex items-center justify-center text-white font-black text-lg">
+                      {userName ? userName.charAt(0).toUpperCase() : "T"}
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="font-black text-sm text-slate-900 dark:text-white">{userName}</h3>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h3 className="font-black text-sm text-slate-900 dark:text-white truncate">{userName}</h3>
                     {isVip && (
-                      <span className="bg-gradient-to-r from-pink-500 to-sky-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                      <span className="bg-gradient-to-r from-pink-500 to-sky-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shrink-0">
                         VIP 👑
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400">@{userUsername || "member"} • ID: {userId.slice(0, 10)}</p>
-                  <p className="text-[11px] font-bold text-amber-500 mt-1">⭐ {userStars} Stars</p>
+                  <p className="text-xs text-slate-400 mt-0.5 truncate">
+                    {userUsername ? `@${userUsername}` : "Telegram User"} • ID: <span className="font-mono text-[11px]">{userId}</span>
+                  </p>
+                  <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    <span className="text-amber-500 font-bold">⭐ {userStars} Stars</span>
+                    <span>•</span>
+                    <span>🗓️ {userDate}</span>
+                  </div>
                 </div>
               </div>
 
