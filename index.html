@@ -687,6 +687,46 @@
       const [userDate, setUserDate] = useState(initProfile.udate);
       const [isAdmin, setIsAdmin] = useState(() => isUserAdmin(initProfile.uusername, initProfile.uphone));
 
+      // Resolve backend API URL (supports live Cloud Run, external Telegram webviews, and GitHub Pages fallback)
+      const getApiBase = () => {
+        const custom = localStorage.getItem('tena_custom_api_base');
+        if (custom) return custom.replace(/\/$/, '');
+        if (typeof window !== 'undefined') {
+          if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+            return 'https://ais-dev-e7s2cgm4jqz5wehhtwpl7p-718803968958.europe-west2.run.app';
+          }
+        }
+        return '';
+      };
+
+      // Reactive Telegram WebApp profile detector (catches Telegram user info whenever webview finishes loading)
+      useEffect(() => {
+        const detectTgUser = () => {
+          try {
+            if (window.Telegram && window.Telegram.WebApp) {
+              const tg = window.Telegram.WebApp;
+              try { tg.ready(); } catch(e) {}
+              try { tg.expand(); } catch(e) {}
+              const u = tg.initDataUnsafe?.user;
+              if (u && u.id) {
+                const realId = String(u.id);
+                setUserId(realId);
+                localStorage.setItem('tena_device_uid', realId);
+                const fullName = u.last_name ? `${u.first_name} ${u.last_name}` : u.first_name;
+                if (fullName) setUserName(fullName);
+                if (u.username) setUserUsername(u.username);
+                if (u.photo_url) setUserPhoto(u.photo_url);
+                setIsAdmin(isUserAdmin(u.username, u.phone));
+              }
+            }
+          } catch(e) {}
+        };
+        detectTgUser();
+        const t1 = setTimeout(detectTgUser, 300);
+        const t2 = setTimeout(detectTgUser, 1200);
+        return () => { clearTimeout(t1); clearTimeout(t2); };
+      }, []);
+
       // User Wellness Stars (Preserved)
       const [userStars, setUserStars] = useState(() => {
         const saved = localStorage.getItem(`tena_${initProfile.uid}_stars`);
@@ -855,8 +895,9 @@
       useEffect(() => {
         const syncContent = () => {
           const bust = Date.now();
+          const base = getApiBase();
           // 1. Fetch live articles from server (busting any intermediate cache)
-          fetch(`/api/articles?_t=${bust}`)
+          fetch(`${base}/api/articles?_t=${bust}`)
             .then(res => res.ok ? res.json() : null)
             .then(data => {
               if (data && data.success && Array.isArray(data.articles)) {
@@ -867,7 +908,7 @@
             .catch(() => {});
 
           // 2. Fetch live products from server
-          fetch(`/api/products?_t=${bust}`)
+          fetch(`${base}/api/products?_t=${bust}`)
             .then(res => res.ok ? res.json() : null)
             .then(data => {
               if (data && data.success && Array.isArray(data.products)) {
@@ -879,7 +920,7 @@
 
           // 3. Fetch user-specific orders and wallet balance (so admin approvals instantly update user device)
           if (userId) {
-            fetch(`/api/orders/user/${encodeURIComponent(userId)}?_t=${bust}`)
+            fetch(`${base}/api/orders/user/${encodeURIComponent(userId)}?_t=${bust}`)
               .then(res => res.ok ? res.json() : null)
               .then(data => {
                 if (data && data.success) {
@@ -1055,11 +1096,13 @@
         try {
           localStorage.setItem(`tena_${userId}_orders`, JSON.stringify(updated));
           localStorage.setItem('tena_orders', JSON.stringify(updated));
-          fetch('/api/orders/create', {
+          fetch(`${getApiBase()}/api/orders/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newOrder)
-          }).catch(() => {});
+          }).catch(err => {
+            console.warn("Order API sync:", err);
+          });
         } catch(e) {}
         return newOrder;
       };
@@ -1252,7 +1295,7 @@
 
         const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
         try {
-          const res = await fetch('/api/orders/update-status', {
+          const res = await fetch(`${getApiBase()}/api/orders/update-status`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1332,7 +1375,7 @@
 
         // Broadcast change to server so all devices sync
         const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
-        fetch('/api/articles/save', {
+        fetch(`${getApiBase()}/api/articles/save`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1343,7 +1386,7 @@
         .then(res => res.ok ? res.json() : null)
         .then(data => {
           if (data && data.success) {
-            fetch('/api/articles')
+            fetch(`${getApiBase()}/api/articles`)
               .then(r => r.ok ? r.json() : null)
               .then(d => {
                 if (d && d.success && Array.isArray(d.articles)) {
@@ -1370,7 +1413,7 @@
 
           // Broadcast deletion to server for cross-device sync
           const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
-          fetch('/api/articles/delete', {
+          fetch(`${getApiBase()}/api/articles/delete`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1381,7 +1424,7 @@
           .then(res => res.ok ? res.json() : null)
           .then(data => {
             if (data && data.success) {
-              fetch('/api/articles')
+              fetch(`${getApiBase()}/api/articles`)
                 .then(r => r.ok ? r.json() : null)
                 .then(d => {
                   if (d && d.success && Array.isArray(d.articles)) {
@@ -1452,7 +1495,7 @@
 
         // Broadcast to server for cross-device synchronization
         const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
-        fetch('/api/products/save', {
+        fetch(`${getApiBase()}/api/products/save`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1463,7 +1506,7 @@
         .then(res => res.ok ? res.json() : null)
         .then(data => {
           if (data && data.success) {
-            fetch('/api/products')
+            fetch(`${getApiBase()}/api/products`)
               .then(r => r.ok ? r.json() : null)
               .then(d => {
                 if (d && d.success && Array.isArray(d.products)) {
@@ -1490,7 +1533,7 @@
 
           // Broadcast deletion to server for cross-device sync
           const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
-          fetch('/api/products/delete', {
+          fetch(`${getApiBase()}/api/products/delete`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1501,7 +1544,7 @@
           .then(res => res.ok ? res.json() : null)
           .then(data => {
             if (data && data.success) {
-              fetch('/api/products')
+              fetch(`${getApiBase()}/api/products`)
                 .then(r => r.ok ? r.json() : null)
                 .then(d => {
                   if (d && d.success && Array.isArray(d.products)) {

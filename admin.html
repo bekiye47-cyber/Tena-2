@@ -125,7 +125,7 @@
         setTimeout(() => setStatusNotice(''), 3000);
       };
 
-      // Verify existing session on initial load
+      // Verify existing session on initial load and enable live cross-device sync
       useEffect(() => {
         if (!token) {
           setIsVerifying(false);
@@ -144,19 +144,48 @@
             'Authorization': `Bearer ${token}`
           }
         }).catch(() => {});
-      }, []);
+
+        // 1. Live automatic polling interval (every 3.5 seconds) so new orders, deposits, and data appear automatically
+        const pollInterval = setInterval(() => {
+          fetchDashboardData(token, true);
+        }, 3500);
+
+        // 2. Refresh immediately when admin switches back to tab
+        const handleFocus = () => {
+          fetchDashboardData(token, true);
+        };
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) handleFocus();
+        });
+
+        // 3. Sync if storage changes in another tab
+        const handleStorage = (e) => {
+          if (e.key === 'tena_orders' || e.key === 'tena_articles' || e.key === 'tena_products') {
+            fetchDashboardData(token, true);
+          }
+        };
+        window.addEventListener('storage', handleStorage);
+
+        return () => {
+          clearInterval(pollInterval);
+          window.removeEventListener('focus', handleFocus);
+          window.removeEventListener('storage', handleStorage);
+        };
+      }, [token]);
 
       // Fetch all administrative collections (API first with localStorage fallback)
-      const fetchDashboardData = async (activeAuthToken = token) => {
-        setIsLoadingData(true);
+      const fetchDashboardData = async (activeAuthToken = token, silent = false) => {
+        if (!silent) setIsLoadingData(true);
         try {
           const authHeader = activeAuthToken ? { 'Authorization': `Bearer ${activeAuthToken}` } : {};
+          const bust = Date.now();
 
           const [overviewRes, articlesRes, productsRes, ordersRes] = await Promise.all([
-            fetch('/api/admin/overview', { headers: authHeader }).then(r => r.ok ? r.json() : null).catch(() => null),
-            fetch('/api/articles').then(r => r.ok ? r.json() : null).catch(() => null),
-            fetch('/api/products').then(r => r.ok ? r.json() : null).catch(() => null),
-            fetch('/api/orders', { headers: authHeader }).then(r => r.ok ? r.json() : null).catch(() => null)
+            fetch(`/api/admin/overview?_t=${bust}`, { headers: authHeader }).then(r => r.ok ? r.json() : null).catch(() => null),
+            fetch(`/api/articles?_t=${bust}`).then(r => r.ok ? r.json() : null).catch(() => null),
+            fetch(`/api/products?_t=${bust}`).then(r => r.ok ? r.json() : null).catch(() => null),
+            fetch(`/api/orders?_t=${bust}`, { headers: authHeader }).then(r => r.ok ? r.json() : null).catch(() => null)
           ]);
 
           // Articles: Server response or localStorage
@@ -509,6 +538,10 @@
         const updatedOrders = orders.map(o => o.id === orderId ? { ...o, status } : o);
         setOrders(updatedOrders);
         localStorage.setItem('tena_orders', JSON.stringify(updatedOrders));
+        setStats(prev => prev ? {
+          ...prev,
+          pendingOrders: updatedOrders.filter(o => o.status === 'pending').length
+        } : prev);
         showNotice(`Order #${orderId} marked as ${status} ✓`);
 
         const activeToken = token || localStorage.getItem('tena_admin_session_token') || 'master_default';
@@ -551,7 +584,9 @@
           (o.id && o.id.toLowerCase().includes(q)) || 
           (o.title && o.title.toLowerCase().includes(q)) ||
           (o.txnRef && o.txnRef.toLowerCase().includes(q)) ||
-          (o.status && o.status.toLowerCase().includes(q))
+          (o.status && o.status.toLowerCase().includes(q)) ||
+          (o.userName && o.userName.toLowerCase().includes(q)) ||
+          (o.userId && o.userId.toLowerCase().includes(q))
         );
       }, [orders, orderSearch]);
 
@@ -1072,7 +1107,20 @@
                               </td>
                               <td className="p-4">
                                 <span className="font-bold text-white block">{order.title}</span>
-                                <span className="text-[10px] text-slate-400">{order.type}</span>
+                                <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                                  <span className={`px-1.5 py-0.5 rounded font-bold ${order.type === 'Wallet Deposit' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-300'}`}>
+                                    {order.type}
+                                  </span>
+                                  {order.userName && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="text-emerald-400 font-semibold">👤 {order.userName}</span>
+                                    </>
+                                  )}
+                                  {order.userId && order.userId !== 'guest' && (
+                                    <span className="text-slate-500 font-mono text-[9px]">({order.userId})</span>
+                                  )}
+                                </div>
                               </td>
                               <td className="p-4 whitespace-nowrap">
                                 <span className="font-black text-white">{order.amount} {order.currency}</span>
