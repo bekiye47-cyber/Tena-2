@@ -851,10 +851,12 @@
 
       const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
-      // Sync latest Articles and Products from backend API (cross-device polling, tab visibility re-sync, and live cross-tab storage sync)
+      // Sync latest Articles, Products, User Orders, and Wallet Balance from backend API (cross-device polling, tab visibility re-sync, and live cross-tab storage sync)
       useEffect(() => {
         const syncContent = () => {
-          fetch('/api/articles')
+          const bust = Date.now();
+          // 1. Fetch live articles from server (busting any intermediate cache)
+          fetch(`/api/articles?_t=${bust}`)
             .then(res => res.ok ? res.json() : null)
             .then(data => {
               if (data && data.success && Array.isArray(data.articles)) {
@@ -864,7 +866,8 @@
             })
             .catch(() => {});
 
-          fetch('/api/products')
+          // 2. Fetch live products from server
+          fetch(`/api/products?_t=${bust}`)
             .then(res => res.ok ? res.json() : null)
             .then(data => {
               if (data && data.success && Array.isArray(data.products)) {
@@ -873,13 +876,33 @@
               }
             })
             .catch(() => {});
+
+          // 3. Fetch user-specific orders and wallet balance (so admin approvals instantly update user device)
+          if (userId) {
+            fetch(`/api/orders/user/${encodeURIComponent(userId)}?_t=${bust}`)
+              .then(res => res.ok ? res.json() : null)
+              .then(data => {
+                if (data && data.success) {
+                  if (Array.isArray(data.orders)) {
+                    setOrders(data.orders);
+                    localStorage.setItem(`tena_${userId}_orders`, JSON.stringify(data.orders));
+                  }
+                  if (data.walletBalance !== null && data.walletBalance !== undefined) {
+                    const serverBal = Number(data.walletBalance);
+                    setWalletBalance(serverBal);
+                    localStorage.setItem(`tena_${userId}_wallet_balance`, String(serverBal));
+                  }
+                }
+              })
+              .catch(() => {});
+          }
         };
 
         // 1. Initial fetch on mount / app open
         syncContent();
 
-        // 2. Active polling interval (checks every 5 seconds for newly published items by admin)
-        const pollInterval = setInterval(syncContent, 5000);
+        // 2. Active polling interval (checks every 3.5 seconds for newly published items or admin deposit approvals)
+        const pollInterval = setInterval(syncContent, 3500);
 
         // 3. Whenever user focuses back on the tab or switches back to Telegram mini-app window
         const handleVisibilityOrFocus = () => {
@@ -904,6 +927,12 @@
               if (Array.isArray(updated)) setProducts(updated);
             } catch (err) {}
           }
+          if (e.key === `tena_${userId}_wallet_balance` && e.newValue) {
+            try {
+              const b = parseFloat(e.newValue);
+              if (!isNaN(b)) setWalletBalance(b);
+            } catch (err) {}
+          }
         };
 
         window.addEventListener('storage', handleStorageChange);
@@ -913,7 +942,7 @@
           window.removeEventListener('focus', handleVisibilityOrFocus);
           window.removeEventListener('storage', handleStorageChange);
         };
-      }, []);
+      }, [userId]);
 
       // Persist articles & products
       useEffect(() => {
@@ -1015,13 +1044,16 @@
       const addOrder = (orderData) => {
         const newOrder = {
           id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+          userId: userId || 'guest',
+          userName: userName || 'Member',
           date: new Date().toLocaleDateString(),
-          status: 'pending', // Starts in pending for verification
+          status: orderData.status || 'pending', // Default to pending until verified
           ...orderData
         };
         const updated = [newOrder, ...orders];
         setOrders(updated);
         try {
+          localStorage.setItem(`tena_${userId}_orders`, JSON.stringify(updated));
           localStorage.setItem('tena_orders', JSON.stringify(updated));
           fetch('/api/orders/create', {
             method: 'POST',
@@ -1107,39 +1139,26 @@
         });
       };
 
-      // Top-Up Wallet Handler
+      // Top-Up Wallet Handler (Submits Pending Deposit for Admin Approval before balance is credited)
       const handleTopUpWallet = () => {
         setIsSubmittingTopUp(true);
-        const amountToAddInEtb = currency === 'USD' ? topUpAmount * 50 : topUpAmount;
-        const newBal = walletBalance + amountToAddInEtb;
-        
-        setWalletBalance(newBal);
-        localStorage.setItem(`tena_${userId}_wallet_balance`, String(newBal));
 
-        addOrder({
+        const createdDepositOrder = addOrder({
           title: `Wallet Deposit (${currency === 'USD' ? '$' + topUpAmount + ' USD' : topUpAmount + ' ETB'})`,
           type: "Wallet Deposit",
           amount: topUpAmount,
           currency: currency,
           paymentMethod: topUpMethod === 'telebirr' ? 'Telebirr' : (topUpMethod === 'cbe' ? 'CBE Bank' : 'Online / Card'),
           txnRef: topUpTxnRef || `DEP-${Date.now().toString().slice(-6)}`,
-          status: "purchased"
+          status: "pending" // Admin must approve before funds are credited to wallet
         });
-
-        if (typeof confetti === 'function') {
-          confetti({
-            particleCount: 90,
-            spread: 80,
-            origin: { y: 0.55 },
-            colors: ['#38bdf8', '#ec4899', '#10b981', '#a855f7']
-          });
-        }
 
         setTimeout(() => {
           setIsSubmittingTopUp(false);
           setShowTopUpModal(false);
           setTopUpTxnRef('');
-        }, 1000);
+          setShowOrderHistoryModal(true); // Guide user directly to order history so they see their pending deposit
+        }, 800);
       };
 
       // Direct Wallet Purchase for Products
@@ -1224,10 +1243,32 @@
         handleWalletProductPurchase();
       };
 
-      // Admin toggle order status
-      const handleUpdateOrderStatus = (orderId, newStatus) => {
+      // Admin toggle order status (syncs to server and instantly updates wallet or VIP permissions if approved)
+      const handleUpdateOrderStatus = async (orderId, newStatus) => {
         const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
         setOrders(updated);
+        localStorage.setItem(`tena_${userId}_orders`, JSON.stringify(updated));
+        localStorage.setItem('tena_orders', JSON.stringify(updated));
+
+        const activeToken = localStorage.getItem('tena_admin_session_token') || 'master_default';
+        try {
+          const res = await fetch('/api/orders/update-status', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${activeToken}`
+            },
+            body: JSON.stringify({ orderId, status: newStatus })
+          });
+          const data = await res.json();
+          if (data && data.success) {
+            // If wallet was credited or changed, sync balance
+            if (data.newWalletBalance !== undefined && data.newWalletBalance !== null) {
+              setWalletBalance(data.newWalletBalance);
+              localStorage.setItem(`tena_${userId}_wallet_balance`, String(data.newWalletBalance));
+            }
+          }
+        } catch(e) {}
       };
 
       // Admin CRUD Handlers for Health Hub Articles & VIP Protocols
@@ -2689,12 +2730,20 @@
                   />
                 </div>
 
+                {/* Deposit Security & Admin Confirmation Notice */}
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/50 rounded-2xl flex items-start gap-2.5 text-[11px] text-amber-800 dark:text-amber-200">
+                  <span className="text-base shrink-0">⏳</span>
+                  <p className="leading-snug">
+                    <strong>Admin Verification:</strong> Once submitted, your deposit will be set to <strong>Pending</strong>. The admin will verify your transaction reference and approve it before the balance is credited to your wallet.
+                  </p>
+                </div>
+
                 <button
                   onClick={handleTopUpWallet}
                   disabled={isSubmittingTopUp}
                   className="w-full py-3.5 bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white text-xs font-black rounded-2xl shadow-md shadow-pink-500/20 active:scale-95 transition"
                 >
-                  {isSubmittingTopUp ? "Processing Deposit..." : `Confirm & Deposit +${currency === 'USD' ? '$' + topUpAmount + ' USD' : topUpAmount + ' ETB'}`}
+                  {isSubmittingTopUp ? "Submitting Deposit..." : `Submit Deposit (+${currency === 'USD' ? '$' + topUpAmount + ' USD' : topUpAmount + ' ETB'})`}
                 </button>
               </div>
             </div>

@@ -217,6 +217,9 @@ let leaderboardMembers = new Map();
 // In-memory data store for VIP Subscriptions
 let vipSubscriptions = new Map();
 
+// In-memory data store for User Wallets (User ID -> balance in ETB)
+let userWallets = new Map();
+
 // File-backed persistence helpers
 function loadData() {
   try {
@@ -229,6 +232,9 @@ function loadData() {
       if (Array.isArray(parsed.articles) && parsed.articles.length > 0) articles = parsed.articles;
       if (Array.isArray(parsed.products) && parsed.products.length > 0) products = parsed.products;
       if (Array.isArray(parsed.orders) && parsed.orders.length > 0) orders = parsed.orders;
+      if (parsed.wallets && typeof parsed.wallets === 'object') {
+        userWallets = new Map(Object.entries(parsed.wallets));
+      }
     } else {
       saveData();
     }
@@ -242,7 +248,8 @@ function saveData() {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    fs.writeFileSync(DB_FILE, JSON.stringify({ articles, products, orders }, null, 2), 'utf-8');
+    const walletsObj = Object.fromEntries(userWallets);
+    fs.writeFileSync(DB_FILE, JSON.stringify({ articles, products, orders, wallets: walletsObj }, null, 2), 'utf-8');
   } catch (err) {
     console.error("Error saving db.json:", err);
   }
@@ -426,6 +433,24 @@ app.get('/api/orders', verifyAdmin, (req, res) => {
   res.json({ success: true, orders });
 });
 
+// Get orders for a specific user (so consumer mini-app stays in sync cross-device)
+app.get('/api/orders/user/:userId', (req, res) => {
+  const { userId } = req.params;
+  if (!userId) {
+    return res.status(400).json({ success: false, error: 'User ID required' });
+  }
+  const userOrders = orders.filter(o => o.userId === userId);
+  const walletBalance = userWallets.get(userId) !== undefined ? userWallets.get(userId) : null;
+  res.json({ success: true, orders: userOrders, walletBalance });
+});
+
+// Get or sync user wallet balance
+app.get('/api/wallet/:userId', (req, res) => {
+  const { userId } = req.params;
+  const balance = userWallets.get(userId) !== undefined ? userWallets.get(userId) : null;
+  res.json({ success: true, balance });
+});
+
 app.post('/api/orders/create', (req, res) => {
   const order = req.body;
   if (!order || !order.title) {
@@ -433,14 +458,17 @@ app.post('/api/orders/create', (req, res) => {
   }
   const newOrder = {
     id: order.id || `ORD-${Date.now().toString().slice(-5)}`,
+    userId: order.userId || 'guest',
+    userName: order.userName || 'Member',
     title: order.title,
     type: order.type || 'Standard Purchase',
     amount: order.amount || 0,
     currency: order.currency || 'ETB',
-    status: order.status || 'pending',
+    status: order.status || 'pending', // Starts in pending until Admin confirms
     date: order.date || new Date().toLocaleDateString(),
     paymentMethod: order.paymentMethod || 'Wallet',
-    txnRef: order.txnRef || `TXN-${Date.now().toString().slice(-6)}`
+    txnRef: order.txnRef || `TXN-${Date.now().toString().slice(-6)}`,
+    createdAt: Date.now()
   };
   orders.unshift(newOrder);
   saveData();
@@ -454,11 +482,43 @@ app.post('/api/orders/update-status', verifyAdmin, (req, res) => {
   }
   const target = orders.find(o => o.id === orderId);
   if (target) {
+    const oldStatus = target.status;
     target.status = status;
     target.updatedAt = Date.now();
+
+    // When Admin APPROVES a Wallet Deposit, credit the user's wallet!
+    let newWalletBalance = null;
+    if (target.type === 'Wallet Deposit' && status === 'approved' && oldStatus !== 'approved' && oldStatus !== 'purchased') {
+      const uId = target.userId;
+      if (uId) {
+        const depositEtb = target.currency === 'USD' ? Number(target.amount) * 50 : Number(target.amount);
+        const currentBal = userWallets.get(uId) !== undefined ? userWallets.get(uId) : 1250;
+        const updatedBal = currentBal + depositEtb;
+        userWallets.set(uId, updatedBal);
+        newWalletBalance = updatedBal;
+      }
+    }
+
+    // When Admin APPROVES a VIP Subscription order, activate VIP!
+    if (target.type === 'VIP Subscription' && status === 'approved') {
+      const uId = target.userId;
+      if (uId) {
+        const durationDays = target.plan === 'yearly' ? 365 : (target.plan === 'quarterly' ? 90 : 30);
+        const now = Date.now();
+        vipSubscriptions.set(uId, {
+          userId: uId,
+          isVip: true,
+          plan: target.plan || 'monthly',
+          activatedAt: now,
+          expiresAt: now + (durationDays * 24 * 60 * 60 * 1000)
+        });
+      }
+    }
   }
   saveData();
-  res.json({ success: true, order: target });
+  const uId = target ? target.userId : null;
+  const currentWallet = uId && userWallets.get(uId) !== undefined ? userWallets.get(uId) : null;
+  res.json({ success: true, order: target, newWalletBalance: currentWallet });
 });
 
 // VIP Subscription APIs
