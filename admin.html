@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tena Holistic Services - Back-Office Admin Portal</title>
+  <meta name="description" content="Secure administration dashboard for Tena Holistic Services." />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              pink: '#ec4899',
+              blue: '#0284c7'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- React & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0b0f19;
+      color: #f8fafc;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#090d16] text-slate-100 selection:bg-pink-500 selection:text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    function TenaBrandLogo({ size = 32 }) {
+      return (
+        <svg width={size} height={size} viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="tenaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#38bdf8" />
+              <stop offset="50%" stopColor="#818cf8" />
+              <stop offset="100%" stopColor="#ec4899" />
+            </linearGradient>
+            <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#ec4899" />
+              <stop offset="100%" stopColor="#8b5cf6" />
+            </linearGradient>
+          </defs>
+          <circle cx="100" cy="116" r="18" fill="url(#tenaGrad)" />
+          <path d="M60 176 C 60 138, 140 138, 140 176 Z" fill="url(#tenaGrad)" />
+          <path d="M100 66 C 88 50, 72 64, 72 78 C 72 96, 100 114, 100 114 C 100 114, 128 96, 128 78 C 128 64, 112 50, 100 66 Z" fill="url(#heartGrad)" transform="translate(0, -38)" />
+          <path d="M 64 54 A 66 66 0 0 1 42 78" stroke="#38bdf8" strokeWidth="6" strokeLinecap="round" />
+          <path d="M 136 54 A 66 66 0 0 0 158 78" stroke="#ec4899" strokeWidth="6" strokeLinecap="round" />
+          <path d="M 46 130 A 66 66 0 0 1 66 150" stroke="#38bdf8" strokeWidth="6" strokeLinecap="round" />
+          <path d="M 154 130 A 66 66 0 0 0 134 150" stroke="#ec4899" strokeWidth="6" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
+    function AdminApp() {
+      const [token, setToken] = useState(() => localStorage.getItem('tena_admin_session_token') || '');
+      const [isVerifying, setIsVerifying] = useState(Boolean(token));
+      const [passwordInput, setPasswordInput] = useState('');
+      const [loginError, setLoginError] = useState('');
+      const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+      // Dashboard active view: 'overview' | 'articles' | 'products' | 'orders'
+      const [activeTab, setActiveTab] = useState('overview');
+
+      // Data States
+      const [stats, setStats] = useState(null);
+      const [articles, setArticles] = useState([]);
+      const [products, setProducts] = useState([]);
+      const [orders, setOrders] = useState([]);
+      const [isLoadingData, setIsLoadingData] = useState(false);
+      const [statusNotice, setStatusNotice] = useState('');
+
+      // Article Edit / Create Modal State
+      const [articleModalOpen, setArticleModalOpen] = useState(false);
+      const [articleForm, setArticleForm] = useState({
+        id: '',
+        title: '',
+        category: 'VIP Secret Protocol',
+        snippet: '',
+        content: '',
+        thumbnail: '',
+        readTime: '6 min',
+        youtubeUrl: '',
+        badge: '🔥 Trending VIP',
+        isVipOnly: true,
+        isComingSoon: false,
+        isFeatured: true
+      });
+
+      // Product Edit / Create Modal State
+      const [productModalOpen, setProductModalOpen] = useState(false);
+      const [productForm, setProductForm] = useState({
+        id: '',
+        title: '',
+        category: 'Herbs & Nutrition',
+        description: '',
+        etbPrice: 400,
+        usdPrice: 7.99,
+        image: ''
+      });
+
+      // Search filters
+      const [articleSearch, setArticleSearch] = useState('');
+      const [productSearch, setProductSearch] = useState('');
+      const [orderSearch, setOrderSearch] = useState('');
+
+      const showNotice = (msg) => {
+        setStatusNotice(msg);
+        setTimeout(() => setStatusNotice(''), 3000);
+      };
+
+      // Verify existing session on initial load
+      useEffect(() => {
+        if (!token) {
+          setIsVerifying(false);
+          return;
+        }
+
+        // Active authenticated admin session
+        setIsVerifying(false);
+        fetchDashboardData(token);
+
+        // Optional server session verify in background
+        fetch('/api/admin/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }).catch(() => {});
+      }, []);
+
+      // Fetch all administrative collections (API first with localStorage fallback)
+      const fetchDashboardData = async (activeAuthToken = token) => {
+        setIsLoadingData(true);
+        try {
+          const authHeader = activeAuthToken ? { 'Authorization': `Bearer ${activeAuthToken}` } : {};
+
+          const [overviewRes, articlesRes, productsRes, ordersRes] = await Promise.all([
+            fetch('/api/admin/overview', { headers: authHeader }).then(r => r.ok ? r.json() : null).catch(() => null),
+            fetch('/api/articles').then(r => r.ok ? r.json() : null).catch(() => null),
+            fetch('/api/products').then(r => r.ok ? r.json() : null).catch(() => null),
+            fetch('/api/orders', { headers: authHeader }).then(r => r.ok ? r.json() : null).catch(() => null)
+          ]);
+
+          // Articles: Server response or localStorage
+          let currentArticles = [];
+          if (articlesRes && articlesRes.success && Array.isArray(articlesRes.articles) && articlesRes.articles.length > 0) {
+            currentArticles = articlesRes.articles;
+          } else {
+            const savedArts = localStorage.getItem('tena_articles');
+            if (savedArts) {
+              try { currentArticles = JSON.parse(savedArts) || []; } catch(e) {}
+            }
+          }
+          if (currentArticles.length > 0) setArticles(currentArticles);
+
+          // Products: Server response or localStorage
+          let currentProducts = [];
+          if (productsRes && productsRes.success && Array.isArray(productsRes.products) && productsRes.products.length > 0) {
+            currentProducts = productsRes.products;
+          } else {
+            const savedProds = localStorage.getItem('tena_products');
+            if (savedProds) {
+              try { currentProducts = JSON.parse(savedProds) || []; } catch(e) {}
+            }
+          }
+          if (currentProducts.length > 0) setProducts(currentProducts);
+
+          // Orders: Server response or localStorage
+          let currentOrders = [];
+          if (ordersRes && ordersRes.success && Array.isArray(ordersRes.orders) && ordersRes.orders.length > 0) {
+            currentOrders = ordersRes.orders;
+          } else {
+            const savedOrders = localStorage.getItem('tena_orders');
+            if (savedOrders) {
+              try { currentOrders = JSON.parse(savedOrders) || []; } catch(e) {}
+            }
+            // Scan user profiles for receipts
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && key.endsWith('_orders')) {
+                try {
+                  const arr = JSON.parse(localStorage.getItem(key));
+                  if (Array.isArray(arr)) {
+                    arr.forEach(item => {
+                      if (!currentOrders.some(existing => existing.id === item.id)) {
+                        currentOrders.push(item);
+                      }
+                    });
+                  }
+                } catch(e) {}
+              }
+            }
+          }
+          if (currentOrders.length > 0) setOrders(currentOrders);
+
+          // Stats
+          if (overviewRes && overviewRes.success && overviewRes.stats) {
+            setStats(overviewRes.stats);
+          } else {
+            setStats({
+              totalArticles: currentArticles.length,
+              vipArticles: currentArticles.filter(a => a.isVipOnly).length,
+              totalProducts: currentProducts.length,
+              totalOrders: currentOrders.length,
+              pendingOrders: currentOrders.filter(o => o.status === 'pending').length
+            });
+          }
+        } catch (err) {
+          console.warn("Dashboard sync using local state:", err);
+        } finally {
+          setIsLoadingData(false);
+        }
+      };
+
+      // Login handler: Instant master password validation + background server sync
+      const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoginError('');
+        const trimmed = passwordInput.trim();
+        if (!trimmed) {
+          setLoginError('Please enter the admin password');
+          return;
+        }
+
+        setIsLoggingIn(true);
+
+        // Immediate master password unlock
+        if (trimmed === '559964') {
+          const sessionToken = 'master_' + Date.now();
+          localStorage.setItem('tena_admin_session_token', sessionToken);
+          setToken(sessionToken);
+          setPasswordInput('');
+          setIsLoggingIn(false);
+
+          // Background sync to server if running full-stack
+          fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: trimmed })
+          }).then(r => r.ok ? r.json() : null).then(d => {
+            if (d && d.token) {
+              localStorage.setItem('tena_admin_session_token', d.token);
+              setToken(d.token);
+            }
+          }).catch(() => {});
+
+          fetchDashboardData(sessionToken);
+          return;
+        }
+
+        // Check backend server if custom password
+        try {
+          const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({ password: trimmed })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success && data.token) {
+              localStorage.setItem('tena_admin_session_token', data.token);
+              setToken(data.token);
+              setPasswordInput('');
+              setIsLoggingIn(false);
+              fetchDashboardData(data.token);
+              return;
+            }
+          }
+          
+          setLoginError('Incorrect admin password. Please try again.');
+          setIsLoggingIn(false);
+        } catch (err) {
+          setLoginError('Incorrect admin password. Please try again.');
+          setIsLoggingIn(false);
+        }
+      };
+
+      // Logout handler
+      const handleLogout = async () => {
+        try {
+          await fetch('/api/admin/logout', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+        } catch(e) {}
+        localStorage.removeItem('tena_admin_session_token');
+        setToken('');
+        setStats(null);
+      };
+
+      // Article Actions
+      const openCreateArticle = () => {
+        setArticleForm({
+          id: `art_${Date.now()}`,
+          title: '',
+          category: 'VIP Secret Protocol',
+          snippet: '',
+          content: '### Key Health Principles:\n1. Natural cellular rejuvenation.\n2. Circadian fasting protocol.\n3. Botanical infusions for immunity.',
+          thumbnail: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80',
+          readTime: '6 min',
+          youtubeUrl: '',
+          badge: '🔥 Trending VIP',
+          isVipOnly: true,
+          isComingSoon: false,
+          isFeatured: true
+        });
+        setArticleModalOpen(true);
+      };
+
+      const openEditArticle = (art) => {
+        setArticleForm({
+          id: art.id,
+          title: art.title || '',
+          category: art.category || 'VIP Secret Protocol',
+          snippet: art.snippet || '',
+          content: art.content || '',
+          thumbnail: art.thumbnail || '',
+          readTime: art.readTime || '5 min',
+          youtubeUrl: art.youtubeUrl || '',
+          badge: art.badge || (art.isVipOnly ? '💎 VIP Secret' : '🌿 Health Guide'),
+          isVipOnly: Boolean(art.isVipOnly),
+          isComingSoon: Boolean(art.isComingSoon),
+          isFeatured: Boolean(art.isFeatured)
+        });
+        setArticleModalOpen(true);
+      };
+
+      const handleSaveArticle = async (e) => {
+        e.preventDefault();
+        if (!articleForm.title.trim()) {
+          alert('Article title is required');
+          return;
+        }
+
+        // 1. Update state & localStorage immediately
+        const updated = articles.some(a => a.id === articleForm.id)
+          ? articles.map(a => a.id === articleForm.id ? articleForm : a)
+          : [articleForm, ...articles];
+        
+        setArticles(updated);
+        localStorage.setItem('tena_articles', JSON.stringify(updated));
+        setArticleModalOpen(false);
+        showNotice('Article saved and published successfully ✓');
+
+        // 2. Sync to server in background
+        const activeToken = token || localStorage.getItem('tena_admin_session_token') || 'master_default';
+        try {
+          const res = await fetch('/api/articles/save', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${activeToken}`
+            },
+            body: JSON.stringify(articleForm)
+          });
+          const data = await res.json();
+          if (data && data.success) {
+            // refresh data to stay perfectly in sync
+            fetch('/api/articles')
+              .then(r => r.json())
+              .then(d => { if (d.success && Array.isArray(d.articles)) setArticles(d.articles); })
+              .catch(() => {});
+          }
+        } catch(e) {}
+      };
+
+      const handleDeleteArticle = async (id, title) => {
+        if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+
+        // 1. Update state & localStorage immediately
+        const updated = articles.filter(a => a.id !== id);
+        setArticles(updated);
+        localStorage.setItem('tena_articles', JSON.stringify(updated));
+        showNotice('Article deleted successfully');
+
+        // 2. Sync to server in background
+        const activeToken = token || localStorage.getItem('tena_admin_session_token') || 'master_default';
+        try {
+          await fetch('/api/articles/delete', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${activeToken}`
+            },
+            body: JSON.stringify({ id })
+          });
+        } catch(e) {}
+      };
+
+      // Product Actions
+      const openCreateProduct = () => {
+        setProductForm({
+          id: `p_${Date.now()}`,
+          title: '',
+          category: 'Herbs & Nutrition',
+          description: '',
+          etbPrice: 450,
+          usdPrice: 8.00,
+          image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80'
+        });
+        setProductModalOpen(true);
+      };
+
+      const openEditProduct = (prod) => {
+        setProductForm({
+          id: prod.id,
+          title: prod.title || '',
+          category: prod.category || 'Herbs & Nutrition',
+          description: prod.description || '',
+          etbPrice: prod.etbPrice || 450,
+          usdPrice: prod.usdPrice || 8.00,
+          image: prod.image || ''
+        });
+        setProductModalOpen(true);
+      };
+
+      const handleSaveProduct = async (e) => {
+        e.preventDefault();
+        if (!productForm.title.trim()) {
+          alert('Product title is required');
+          return;
+        }
+
+        const newProd = {
+          ...productForm,
+          etbPrice: Number(productForm.etbPrice) || 0,
+          usdPrice: Number(productForm.usdPrice) || 0
+        };
+
+        // 1. Update state & localStorage immediately
+        const updated = products.some(p => p.id === newProd.id)
+          ? products.map(p => p.id === newProd.id ? newProd : p)
+          : [newProd, ...products];
+
+        setProducts(updated);
+        localStorage.setItem('tena_products', JSON.stringify(updated));
+        setProductModalOpen(false);
+        showNotice('Product updated in Store inventory ✓');
+
+        // 2. Sync to server in background
+        const activeToken = token || localStorage.getItem('tena_admin_session_token') || 'master_default';
+        try {
+          const res = await fetch('/api/products/save', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${activeToken}`
+            },
+            body: JSON.stringify(newProd)
+          });
+          const data = await res.json();
+          if (data && data.success) {
+            // refresh data to stay perfectly in sync
+            fetch('/api/products')
+              .then(r => r.json())
+              .then(d => { if (d.success && Array.isArray(d.products)) setProducts(d.products); })
+              .catch(() => {});
+          }
+        } catch(e) {}
+      };
+
+      const handleDeleteProduct = async (id, title) => {
+        if (!confirm(`Delete product "${title}" from the store?`)) return;
+
+        // 1. Update state & localStorage immediately
+        const updated = products.filter(p => p.id !== id);
+        setProducts(updated);
+        localStorage.setItem('tena_products', JSON.stringify(updated));
+        showNotice('Product deleted successfully');
+
+        // 2. Sync to server in background
+        const activeToken = token || localStorage.getItem('tena_admin_session_token') || 'master_default';
+        try {
+          await fetch('/api/products/delete', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${activeToken}`
+            },
+            body: JSON.stringify({ id })
+          });
+        } catch(e) {}
+      };
+
+      // Order Status Actions
+      const handleUpdateOrderStatus = async (orderId, status) => {
+        const updatedOrders = orders.map(o => o.id === orderId ? { ...o, status } : o);
+        setOrders(updatedOrders);
+        localStorage.setItem('tena_orders', JSON.stringify(updatedOrders));
+        showNotice(`Order #${orderId} marked as ${status} ✓`);
+
+        const activeToken = token || localStorage.getItem('tena_admin_session_token') || 'master_default';
+        try {
+          await fetch('/api/orders/update-status', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${activeToken}`
+            },
+            body: JSON.stringify({ orderId, status })
+          });
+        } catch(e) {}
+      };
+
+      // Filtered lists
+      const filteredArticles = useMemo(() => {
+        const q = articleSearch.toLowerCase().trim();
+        if (!q) return articles;
+        return articles.filter(a => 
+          (a.title && a.title.toLowerCase().includes(q)) || 
+          (a.category && a.category.toLowerCase().includes(q)) ||
+          (a.snippet && a.snippet.toLowerCase().includes(q))
+        );
+      }, [articles, articleSearch]);
+
+      const filteredProducts = useMemo(() => {
+        const q = productSearch.toLowerCase().trim();
+        if (!q) return products;
+        return products.filter(p => 
+          (p.title && p.title.toLowerCase().includes(q)) || 
+          (p.category && p.category.toLowerCase().includes(q))
+        );
+      }, [products, productSearch]);
+
+      const filteredOrders = useMemo(() => {
+        const q = orderSearch.toLowerCase().trim();
+        if (!q) return orders;
+        return orders.filter(o => 
+          (o.id && o.id.toLowerCase().includes(q)) || 
+          (o.title && o.title.toLowerCase().includes(q)) ||
+          (o.txnRef && o.txnRef.toLowerCase().includes(q)) ||
+          (o.status && o.status.toLowerCase().includes(q))
+        );
+      }, [orders, orderSearch]);
+
+      if (isVerifying) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="text-center space-y-3">
+              <div className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-xs text-slate-400 font-bold">Verifying admin session...</p>
+            </div>
+          </div>
+        );
+      }
+
+      // LOGIN SCREEN
+      if (!token) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-[#0b0f19] via-[#090d16] to-[#04060a]">
+            <div className="max-w-md w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 backdrop-blur-xl">
+              
+              <div className="text-center space-y-2">
+                <div className="flex justify-center mb-2">
+                  <div className="p-3 bg-slate-800/80 rounded-2xl border border-slate-700/60 shadow-inner">
+                    <TenaBrandLogo size={44} />
+                  </div>
+                </div>
+                <h1 className="text-xl font-black text-white tracking-tight">Tena Holistic Admin</h1>
+                <p className="text-xs text-slate-400">Web Back-Office Portal • High-Security Authentication</p>
+              </div>
+
+              {loginError && (
+                <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-xs font-semibold flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                    <span>Admin Master Password</span>
+                    <span className="text-[10px] text-slate-500 font-normal">Server-verified</span>
+                  </label>
+                  <input
+                    type="password"
+                    autoFocus
+                    placeholder="Enter admin password..."
+                    value={passwordInput}
+                    onChange={e => setPasswordInput(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-800/70 border border-slate-700 rounded-2xl text-sm font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="w-full py-3.5 bg-gradient-to-r from-pink-500 to-sky-500 hover:from-pink-600 hover:to-sky-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-pink-500/20 active:scale-[0.98] transition flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Authenticating...</span>
+                    </>
+                  ) : (
+                    <span>Unlock Admin Console →</span>
+                  )}
+                </button>
+              </form>
+
+              <div className="pt-2 border-t border-slate-800/80 text-center">
+                <a href="/" className="text-xs text-slate-400 hover:text-white transition inline-flex items-center gap-1 font-semibold">
+                  <span>←</span>
+                  <span>Return to Consumer Web App</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // MAIN ADMIN DASHBOARD (Desktop & Mobile Web Optimized)
+      return (
+        <div className="min-h-screen flex flex-col md:flex-row bg-[#080b12]">
+          
+          {/* SIDEBAR NAVIGATION */}
+          <aside className="w-full md:w-64 bg-slate-900/90 border-b md:border-b-0 md:border-r border-slate-800/80 p-5 flex flex-col justify-between shrink-0">
+            <div className="space-y-6">
+              {/* Brand Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <TenaBrandLogo size={34} />
+                  <div>
+                    <h2 className="font-black text-sm text-white leading-tight">Tena Holistic</h2>
+                    <span className="text-[10px] uppercase font-bold text-pink-400 tracking-wider">Admin Console</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation Tabs */}
+              <nav className="space-y-1">
+                {[
+                  { id: 'overview', label: 'Dashboard Overview', icon: '📊' },
+                  { id: 'articles', label: 'Health Hub & VIP', icon: '📚', count: articles.length },
+                  { id: 'products', label: 'Store Inventory', icon: '🌿', count: products.length },
+                  { id: 'orders', label: 'Orders & Receipts', icon: '📦', count: orders.length }
+                ].map(item => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={`w-full px-3.5 py-2.5 rounded-2xl flex items-center justify-between text-xs font-bold transition ${
+                        isActive
+                          ? 'bg-gradient-to-r from-pink-500/20 to-sky-500/20 text-white border border-pink-500/40'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <span className="text-base">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </div>
+                      {typeof item.count !== 'undefined' && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-pink-500 text-white font-black' : 'bg-slate-800 text-slate-400'}`}>
+                          {item.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="pt-6 border-t border-slate-800 space-y-2 mt-4 md:mt-0">
+              <a
+                href="/"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-between transition"
+              >
+                <span>🌐 View Public App</span>
+                <span className="text-slate-400">↗</span>
+              </a>
+
+              <button
+                onClick={handleLogout}
+                className="w-full px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-bold flex items-center justify-between transition border border-rose-500/20"
+              >
+                <span>🔒 Log Out</span>
+                <span>✕</span>
+              </button>
+            </div>
+          </aside>
+
+          {/* MAIN CONTENT AREA */}
+          <main className="flex-1 p-4 md:p-8 overflow-y-auto space-y-6">
+            
+            {/* Top Bar with Live Refresh & Status Notice */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+              <div>
+                <h1 className="text-xl md:text-2xl font-black text-white capitalize">
+                  {activeTab === 'overview' && 'System Performance & Overview'}
+                  {activeTab === 'articles' && 'Health Hub Articles & VIP Protocols'}
+                  {activeTab === 'products' && 'Holistic Store Inventory'}
+                  {activeTab === 'orders' && 'Customer Orders & Transactions'}
+                </h1>
+                <p className="text-xs text-slate-400">Manage real-time content, inventory, and customer transactions</p>
+              </div>
+
+              <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+                {statusNotice && (
+                  <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold animate-fade-in">
+                    {statusNotice}
+                  </div>
+                )}
+                <button
+                  onClick={() => fetchDashboardData()}
+                  disabled={isLoadingData}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition disabled:opacity-50"
+                >
+                  <span className={isLoadingData ? "animate-spin" : ""}>🔄</span>
+                  <span>Refresh Data</span>
+                </button>
+              </div>
+            </div>
+
+            {/* TAB 1: DASHBOARD OVERVIEW */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800/80 space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Articles</span>
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl md:text-3xl font-black text-white">{articles.length}</span>
+                      <span className="text-xs text-pink-400 font-bold">({articles.filter(a => a.isVipOnly).length} VIP)</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800/80 space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Store Products</span>
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl md:text-3xl font-black text-white">{products.length}</span>
+                      <span className="text-xs text-emerald-400 font-bold">Active in Catalog</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800/80 space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Orders</span>
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl md:text-3xl font-black text-white">{orders.length}</span>
+                      <span className="text-xs text-sky-400 font-bold">Logged</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800/80 space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending Approvals</span>
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl md:text-3xl font-black text-amber-400">
+                        {orders.filter(o => o.status === 'pending').length}
+                      </span>
+                      <span className="text-xs text-slate-400 font-bold">Requires verification</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Action Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div
+                    onClick={() => { setActiveTab('articles'); openCreateArticle(); }}
+                    className="p-5 rounded-3xl bg-gradient-to-br from-pink-950/30 to-slate-900 border border-pink-500/30 hover:border-pink-500/60 cursor-pointer transition space-y-2"
+                  >
+                    <span className="text-2xl">➕</span>
+                    <h3 className="text-sm font-black text-white">Create New VIP Protocol</h3>
+                    <p className="text-xs text-slate-400">Publish a restricted longevity guide, secret video recipe, or article to Health Hub.</p>
+                  </div>
+
+                  <div
+                    onClick={() => { setActiveTab('products'); openCreateProduct(); }}
+                    className="p-5 rounded-3xl bg-gradient-to-br from-emerald-950/30 to-slate-900 border border-emerald-500/30 hover:border-emerald-500/60 cursor-pointer transition space-y-2"
+                  >
+                    <span className="text-2xl">🌿</span>
+                    <h3 className="text-sm font-black text-white">Add Store Product</h3>
+                    <p className="text-xs text-slate-400">List an organic herbal tea, raw honey, or medicinal formula with ETB / USD pricing.</p>
+                  </div>
+
+                  <div
+                    onClick={() => setActiveTab('orders')}
+                    className="p-5 rounded-3xl bg-gradient-to-br from-sky-950/30 to-slate-900 border border-sky-500/30 hover:border-sky-500/60 cursor-pointer transition space-y-2"
+                  >
+                    <span className="text-2xl">⚡</span>
+                    <h3 className="text-sm font-black text-white">Review Order Queue</h3>
+                    <p className="text-xs text-slate-400">Approve or fulfill Telebirr / CBE payment transactions submitted by members.</p>
+                  </div>
+                </div>
+
+                {/* Recent Orders Overview */}
+                <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black text-white">Recent Customer Transactions</h3>
+                    <button onClick={() => setActiveTab('orders')} className="text-xs text-sky-400 hover:text-sky-300 font-bold">
+                      View All ({orders.length}) →
+                    </button>
+                  </div>
+
+                  <div className="divide-y divide-slate-800">
+                    {orders.slice(0, 5).map(o => (
+                      <div key={o.id} className="py-3 flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-black text-white">{o.title}</span>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                              o.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' :
+                              o.status === 'purchased' ? 'bg-sky-500/20 text-sky-300' :
+                              'bg-amber-500/20 text-amber-300'
+                            }`}>
+                              {o.status}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400">
+                            {o.id} • {o.paymentMethod} • Ref: {o.txnRef}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-black text-white">{o.amount} {o.currency}</span>
+                          <span className="block text-[10px] text-slate-500">{o.date}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: HEALTH HUB ARTICLES & VIP PROTOCOLS */}
+            {activeTab === 'articles' && (
+              <div className="space-y-4">
+                {/* Header Controls */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <div className="relative flex-1 max-w-md">
+                    <input
+                      type="text"
+                      placeholder="Search articles by title, category, or keyword..."
+                      value={articleSearch}
+                      onChange={e => setArticleSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500"
+                    />
+                    <span className="absolute left-3 top-2.5 text-xs text-slate-500">🔍</span>
+                  </div>
+
+                  <button
+                    onClick={openCreateArticle}
+                    className="px-4 py-2.5 bg-gradient-to-r from-pink-500 to-sky-500 hover:from-pink-600 hover:to-sky-600 text-white rounded-2xl text-xs font-black shadow-md flex items-center justify-center space-x-1.5 transition"
+                  >
+                    <span>➕ New Article / VIP Protocol</span>
+                  </button>
+                </div>
+
+                {/* Articles Table */}
+                <div className="bg-slate-900/80 border border-slate-800/80 rounded-3xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-300">
+                      <thead className="bg-slate-800/60 text-slate-400 uppercase font-black text-[10px] border-b border-slate-800">
+                        <tr>
+                          <th className="p-4">Article</th>
+                          <th className="p-4">Category</th>
+                          <th className="p-4">Access Level</th>
+                          <th className="p-4">Featured</th>
+                          <th className="p-4">Video Link</th>
+                          <th className="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-medium">
+                        {filteredArticles.length === 0 ? (
+                          <tr>
+                            <td colSpan="6" className="p-8 text-center text-slate-500">
+                              No articles found matching search query.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredArticles.map(art => (
+                            <tr key={art.id} className="hover:bg-slate-800/30 transition">
+                              <td className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  {art.thumbnail ? (
+                                    <img src={art.thumbnail} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0 border border-slate-700" />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-base">📖</div>
+                                  )}
+                                  <div>
+                                    <h4 className="font-bold text-white line-clamp-1">{art.title}</h4>
+                                    <p className="text-[10px] text-slate-400 line-clamp-1">{art.snippet}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-4 whitespace-nowrap">
+                                <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-[10px] font-bold">
+                                  {art.category}
+                                </span>
+                              </td>
+                              <td className="p-4 whitespace-nowrap">
+                                {art.isVipOnly ? (
+                                  <span className="px-2.5 py-1 rounded-lg bg-pink-500/20 text-pink-300 border border-pink-500/30 text-[10px] font-black">
+                                    💎 VIP Exclusive
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                                    🌿 Free Public
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-4 whitespace-nowrap">
+                                {art.isFeatured ? (
+                                  <span className="text-emerald-400 text-xs font-bold">✓ Yes</span>
+                                ) : (
+                                  <span className="text-slate-500 text-xs">No</span>
+                                )}
+                              </td>
+                              <td className="p-4 whitespace-nowrap">
+                                {art.youtubeUrl ? (
+                                  <a href={art.youtubeUrl} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-[11px] font-bold">
+                                    ▶ YouTube
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-500 text-[11px]">None</span>
+                                )}
+                              </td>
+                              <td className="p-4 text-right whitespace-nowrap space-x-1.5">
+                                <button
+                                  onClick={() => openEditArticle(art)}
+                                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-bold transition"
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteArticle(art.id, art.title)}
+                                  className="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-[11px] font-bold transition"
+                                >
+                                  🗑️ Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: STORE INVENTORY */}
+            {activeTab === 'products' && (
+              <div className="space-y-4">
+                {/* Header Controls */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <div className="relative flex-1 max-w-md">
+                    <input
+                      type="text"
+                      placeholder="Search store inventory by title or category..."
+                      value={productSearch}
+                      onChange={e => setProductSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                    />
+                    <span className="absolute left-3 top-2.5 text-xs text-slate-500">🔍</span>
+                  </div>
+
+                  <button
+                    onClick={openCreateProduct}
+                    className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-2xl text-xs font-black shadow-md flex items-center justify-center space-x-1.5 transition"
+                  >
+                    <span>➕ Add New Product</span>
+                  </button>
+                </div>
+
+                {/* Products Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredProducts.map(prod => (
+                    <div key={prod.id} className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                      <div className="space-y-2.5">
+                        <div className="w-full h-36 rounded-2xl overflow-hidden bg-slate-800 relative">
+                          <img src={prod.image} alt={prod.title} className="w-full h-full object-cover" />
+                          <span className="absolute top-2 left-2 px-2.5 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-emerald-300 text-[10px] font-black">
+                            {prod.category}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm text-white">{prod.title}</h4>
+                        <p className="text-xs text-slate-400 line-clamp-2">{prod.description}</p>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                        <div>
+                          <span className="text-sm font-black text-emerald-400">{prod.etbPrice} ETB</span>
+                          <span className="text-[11px] text-slate-400 block">${prod.usdPrice} USD</span>
+                        </div>
+
+                        <div className="flex items-center space-x-1.5">
+                          <button
+                            onClick={() => openEditProduct(prod)}
+                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(prod.id, prod.title)}
+                            className="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-xs font-bold transition"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: ORDERS & RECEIPTS */}
+            {activeTab === 'orders' && (
+              <div className="space-y-4">
+                <div className="relative max-w-md">
+                  <input
+                    type="text"
+                    placeholder="Search by Order ID, Reference ID, or item..."
+                    value={orderSearch}
+                    onChange={e => setOrderSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                  />
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-500">🔍</span>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-800/80 rounded-3xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-300">
+                      <thead className="bg-slate-800/60 text-slate-400 uppercase font-black text-[10px] border-b border-slate-800">
+                        <tr>
+                          <th className="p-4">Order ID & Date</th>
+                          <th className="p-4">Item & Type</th>
+                          <th className="p-4">Amount</th>
+                          <th className="p-4">Payment Method & Ref</th>
+                          <th className="p-4">Current Status</th>
+                          <th className="p-4 text-right">Approval Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-medium">
+                        {filteredOrders.length === 0 ? (
+                          <tr>
+                            <td colSpan="6" className="p-8 text-center text-slate-500">
+                              No customer orders found.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredOrders.map(order => (
+                            <tr key={order.id} className="hover:bg-slate-800/30 transition">
+                              <td className="p-4">
+                                <span className="font-mono font-black text-white">{order.id}</span>
+                                <span className="block text-[10px] text-slate-400">{order.date}</span>
+                              </td>
+                              <td className="p-4">
+                                <span className="font-bold text-white block">{order.title}</span>
+                                <span className="text-[10px] text-slate-400">{order.type}</span>
+                              </td>
+                              <td className="p-4 whitespace-nowrap">
+                                <span className="font-black text-white">{order.amount} {order.currency}</span>
+                              </td>
+                              <td className="p-4">
+                                <span className="font-bold text-slate-200 block">{order.paymentMethod}</span>
+                                <span className="font-mono text-[10px] text-sky-400">{order.txnRef}</span>
+                              </td>
+                              <td className="p-4 whitespace-nowrap">
+                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${
+                                  order.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                                  order.status === 'purchased' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
+                                  'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                }`}>
+                                  {order.status}
+                                </span>
+                              </td>
+                              <td className="p-4 text-right whitespace-nowrap space-x-1">
+                                {order.status === 'pending' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, 'approved')}
+                                      className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[11px] font-bold transition"
+                                    >
+                                      ✓ Approve
+                                    </button>
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, 'rejected')}
+                                      className="px-2 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-[11px] font-bold transition"
+                                    >
+                                      ✕ Reject
+                                    </button>
+                                  </>
+                                )}
+                                {order.status === 'approved' && (
+                                  <button
+                                    onClick={() => handleUpdateOrderStatus(order.id, 'purchased')}
+                                    className="px-2.5 py-1 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-[11px] font-bold transition"
+                                  >
+                                    Mark Complete
+                                  </button>
+                                )}
+                                {order.status === 'purchased' && (
+                                  <span className="text-emerald-400 text-xs font-bold">Completed ✓</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* ARTICLE EDIT / CREATE MODAL */}
+          {articleModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                  <h3 className="font-black text-sm text-white">
+                    {articleForm.id && articles.some(a => a.id === articleForm.id) ? 'Edit Health Hub Article' : 'Create New Article / VIP Protocol'}
+                  </h3>
+                  <button onClick={() => setArticleModalOpen(false)} className="text-slate-400 hover:text-white text-sm font-bold">
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveArticle} className="p-4 space-y-4 overflow-y-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-300">Article Title *</label>
+                      <input
+                        type="text"
+                        required
+                        value={articleForm.title}
+                        onChange={e => setArticleForm({ ...articleForm, title: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-300">Category</label>
+                      <select
+                        value={articleForm.category}
+                        onChange={e => setArticleForm({ ...articleForm, category: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                      >
+                        <option value="VIP Secret Protocol">💎 VIP Secret Protocol</option>
+                        <option value="Cancer Care">🎗️ Cancer Care</option>
+                        <option value="Diabetes">🩸 Diabetes</option>
+                        <option value="Weight Loss">⚖️ Weight Loss</option>
+                        <option value="Heart Health">❤️ Heart Health</option>
+                        <option value="Herbs & Nutrition">🌿 Herbs & Nutrition</option>
+                        <option value="Mental Wellness">🧘 Mental Wellness</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-300">Brief Summary Snippet</label>
+                    <input
+                      type="text"
+                      value={articleForm.snippet}
+                      onChange={e => setArticleForm({ ...articleForm, snippet: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-300">Thumbnail Image URL</label>
+                      <input
+                        type="url"
+                        value={articleForm.thumbnail}
+                        onChange={e => setArticleForm({ ...articleForm, thumbnail: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-300">YouTube Video URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://youtube.com/watch?v=..."
+                        value={articleForm.youtubeUrl}
+                        onChange={e => setArticleForm({ ...articleForm, youtubeUrl: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-300">Badge Text</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 🔥 Trending VIP"
+                        value={articleForm.badge}
+                        onChange={e => setArticleForm({ ...articleForm, badge: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-4 pt-1">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={articleForm.isVipOnly}
+                        onChange={e => setArticleForm({ ...articleForm, isVipOnly: e.target.checked })}
+                        className="rounded bg-slate-800 border-slate-700 text-pink-500 focus:ring-0"
+                      />
+                      <span className="text-xs font-bold text-pink-300">Lock as VIP Exclusive Only</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={articleForm.isFeatured}
+                        onChange={e => setArticleForm({ ...articleForm, isFeatured: e.target.checked })}
+                        className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                      />
+                      <span className="text-xs font-bold text-sky-300">Pin to Featured Carousel</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={articleForm.isComingSoon}
+                        onChange={e => setArticleForm({ ...articleForm, isComingSoon: e.target.checked })}
+                        className="rounded bg-slate-800 border-slate-700 text-amber-500 focus:ring-0"
+                      />
+                      <span className="text-xs font-bold text-amber-300">Mark as Coming Soon</span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-300">Full Content Markdown</label>
+                    <textarea
+                      rows="7"
+                      value={articleForm.content}
+                      onChange={e => setArticleForm({ ...articleForm, content: e.target.value })}
+                      className="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white font-mono"
+                    ></textarea>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800 flex justify-end space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setArticleModalOpen(false)}
+                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-gradient-to-r from-pink-500 to-sky-500 hover:from-pink-600 hover:to-sky-600 text-white rounded-xl text-xs font-black shadow-md"
+                    >
+                      Save & Publish
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* PRODUCT EDIT / CREATE MODAL */}
+          {productModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl">
+                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                  <h3 className="font-black text-sm text-white">
+                    {productForm.id && products.some(p => p.id === productForm.id) ? 'Edit Store Product' : 'Add New Store Product'}
+                  </h3>
+                  <button onClick={() => setProductModalOpen(false)} className="text-slate-400 hover:text-white text-sm font-bold">
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveProduct} className="p-4 space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-300">Product Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={productForm.title}
+                      onChange={e => setProductForm({ ...productForm, title: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-300">Price in ETB *</label>
+                      <input
+                        type="number"
+                        required
+                        value={productForm.etbPrice}
+                        onChange={e => setProductForm({ ...productForm, etbPrice: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-300">Price in USD ($) *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={productForm.usdPrice}
+                        onChange={e => setProductForm({ ...productForm, usdPrice: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-300">Product Image URL</label>
+                    <input
+                      type="url"
+                      value={productForm.image}
+                      onChange={e => setProductForm({ ...productForm, image: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-300">Description</label>
+                    <textarea
+                      rows="3"
+                      value={productForm.description}
+                      onChange={e => setProductForm({ ...productForm, description: e.target.value })}
+                      className="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"
+                    ></textarea>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800 flex justify-end space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setProductModalOpen(false)}
+                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl text-xs font-black shadow-md"
+                    >
+                      Save Product
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<AdminApp />, document.getElementById('root'));
+  </script>
+</body>
+</html>

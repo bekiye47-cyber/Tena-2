@@ -1,0 +1,6 @@
+{
+  "name": "Tena Holistic Services",
+  "description": "Holistic wellness tracker, habit builder, community leaderboard, and health guide platform for Telegram Mini Apps and Web.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

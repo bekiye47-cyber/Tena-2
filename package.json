@@ -1,0 +1,15 @@
+{
+  "name": "tena-holistic-services",
+  "version": "1.0.0",
+  "description": "Tena Holistic Services Web & Telegram App",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'Build successful'",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

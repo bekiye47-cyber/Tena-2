@@ -1,0 +1,3431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tena Holistic Services</title>
+  <meta name="description" content="Tena Holistic Services - Daily wellness tracker, VIP holistic health secrets, order history, and natural remedies." />
+  <meta property="og:title" content="Tena Holistic Services" />
+  <meta property="og:description" content="Daily wellness tracker, VIP holistic health secrets, and natural remedies." />
+  
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Immediate theme sync script -->
+  <script>
+    try {
+      var savedTheme = localStorage.getItem('tena_app_theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.colorScheme === 'dark')) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch(e) {}
+  </script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              pink: '#ec4899',
+              'pink-light': '#fdf2f8',
+              'pink-dark': '#be185d',
+              blue: '#0284c7',
+              'blue-light': '#f0f9ff',
+              'blue-dark': '#0369a1',
+              purple: '#8b5cf6'
+            }
+          },
+          animation: {
+            'bounce-subtle': 'bounce 2.5s infinite',
+            'fade-in': 'fadeIn 0.2s ease-out',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float-icon': 'floatIcon 3s ease-in-out infinite',
+            'spin-slow': 'spin 12s linear infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(4px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            floatIcon: {
+              '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+              '50%': { transform: 'translateY(-8px) rotate(3deg)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Canvas Confetti Library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      background-color: #f8fafc;
+    }
+    .dark body {
+      background-color: #0c101c;
+      color: #f1f5f9;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .glow-pink-blue {
+      box-shadow: 0 0 25px rgba(236, 72, 153, 0.25), 0 0 45px rgba(56, 189, 248, 0.2);
+    }
+    
+    /* Elegant glassmorphism dark & light effects */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(244, 114, 182, 0.2);
+    }
+    .dark .glass-panel {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(236, 72, 153, 0.18);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(56, 189, 248, 0.1);
+    }
+    .dark .glass-nav {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-color: rgba(56, 189, 248, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-[#0c101c] dark:text-slate-100 transition-colors duration-300 min-h-screen relative overflow-x-hidden">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    const ADMIN_CONFIG = {
+      adminUsernames: ["beki2_0", "beki2.0", "bekiye", "bekiye41", "admin", "YourTelegramUsername"],
+      adminPhones: ["0900000000", "+251900000000", "251900000000", "900000000"],
+      masterPin: "559964"
+    };
+
+    function isUserAdmin(username, phone) {
+      const normUser = (username || "").toLowerCase().replace(/^@/, "").trim();
+      const normPhone = (phone || "").replace(/\D/g, "");
+
+      const matchUsername = normUser && ADMIN_CONFIG.adminUsernames.some(u => u.toLowerCase().replace(/^@/, "").trim() === normUser);
+      const matchPhone = normPhone && ADMIN_CONFIG.adminPhones.some(p => {
+        const cleanP = p.replace(/\D/g, "");
+        return (normPhone.endsWith(cleanP) || cleanP.endsWith(normPhone) || (cleanP.length >= 9 && normPhone.includes(cleanP.slice(-9))));
+      });
+
+      const savedAdminMode = localStorage.getItem('tena_is_admin_mode') === 'true';
+      return Boolean(matchUsername || matchPhone || savedAdminMode);
+    }
+
+    // Logo Component Matching Circular Holistic Health Emblem (Harmony, Heart, Vitality)
+    function TenaBrandLogo({ size = 38, className = "" }) {
+      return (
+        <svg 
+          width={size} 
+          height={size} 
+          viewBox="0 0 200 200" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+        >
+          <defs>
+            <linearGradient id="tenaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#38bdf8" />
+              <stop offset="50%" stopColor="#818cf8" />
+              <stop offset="100%" stopColor="#ec4899" />
+            </linearGradient>
+            <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#ec4899" />
+              <stop offset="100%" stopColor="#8b5cf6" />
+            </linearGradient>
+            <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0ea5e9" />
+              <stop offset="100%" stopColor="#38bdf8" />
+            </linearGradient>
+            <linearGradient id="pinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#d946ef" />
+              <stop offset="100%" stopColor="#ec4899" />
+            </linearGradient>
+          </defs>
+
+          {/* Central Person / Health Silhouette */}
+          <circle cx="100" cy="116" r="18" fill="url(#tenaGrad)" />
+          <path d="M60 176 C 60 138, 140 138, 140 176 Z" fill="url(#tenaGrad)" />
+
+          {/* Top Heart Symbol */}
+          <path d="M100 66 C 88 50, 72 64, 72 78 C 72 96, 100 114, 100 114 C 100 114, 128 96, 128 78 C 128 64, 112 50, 100 66 Z" fill="url(#heartGrad)" transform="translate(0, -38)" />
+
+          {/* Left Vitality Arc Motif */}
+          <g transform="translate(24, 72)">
+            <circle cx="18" cy="24" r="16" fill="url(#blueGrad)" />
+            <path d="M18 12 C 24 12, 28 18, 28 24 C 28 30, 24 36, 18 36 Z" fill="#ffffff" opacity="0.3" />
+          </g>
+
+          {/* Right Wellness Motif */}
+          <g transform="translate(138, 72)">
+            <circle cx="18" cy="24" r="16" fill="url(#pinkGrad)" />
+            <path d="M18 12 C 12 12, 8 18, 8 24 C 8 30, 12 36, 18 36 Z" fill="#ffffff" opacity="0.3" />
+          </g>
+
+          {/* Connecting Celestial Orbit Arcs */}
+          <path d="M 64 54 A 66 66 0 0 1 42 78" stroke="#38bdf8" strokeWidth="5" strokeLinecap="round" />
+          <path d="M 136 54 A 66 66 0 0 0 158 78" stroke="#ec4899" strokeWidth="5" strokeLinecap="round" />
+          <path d="M 46 130 A 66 66 0 0 1 66 150" stroke="#38bdf8" strokeWidth="5" strokeLinecap="round" />
+          <path d="M 154 130 A 66 66 0 0 0 134 150" stroke="#ec4899" strokeWidth="5" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
+    // Clean Minimalist SVG Eye Icons (Hide / Show Balance)
+    function EyeIcon({ className = "w-4 h-4" }) {
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      );
+    }
+
+    function EyeOffIcon({ className = "w-4 h-4" }) {
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+        </svg>
+      );
+    }
+
+    const TRANSLATIONS = {
+      en: {
+        appName: "Tena Holistic",
+        subTitle: "Holistic Health & VIP Wellness",
+        tracker: "Tracker",
+        challenges: "Challenges",
+        hub: "Health Hub",
+        store: "Store",
+        settings: "Settings",
+        welcome: "Welcome",
+        dailyMotivationTitle: "Daily Holistic Wisdom",
+        dailyMotivationText: "Your body is designed for self-healing and vitality. Small, conscious actions today—nourishing water, wholesome living foods, and mindful breathing—rejuvenate your cells and elevate your energy.",
+        todayHabits: "Daily Holistic Habits",
+        dailyReset: "Resets every 24 hours",
+        done: "Done",
+        allHabitsCelebration: "🎉 Remarkable work! All daily habits completed!",
+        allHabitsSub: "Your vital energy and wellness stars have been boosted.",
+        starsBalance: "Stars",
+        settingsTitle: "App Settings & VIP Profile",
+        vipStatusTitle: "VIP Membership Status",
+        vipActive: "VIP Active Member 👑",
+        vipInactive: "Standard Member (Free)",
+        vipExpiresIn: "Valid for next",
+        vipMonthlyDesc: "Monthly subscription grants instant full access to Secret Health Hub guides, exclusive holistic video protocols, and priority wellness consultations.",
+        unlockVipBtn: "✨ Unlock VIP Membership",
+        renewVipBtn: "⚡ Renew VIP Access",
+        orderHistoryBtn: "📦 My Orders & Receipts",
+        orderHistoryTitle: "Order History",
+        orderHistorySub: "Track pending approvals, active purchases, and receipts.",
+        allOrders: "All Orders",
+        pendingOrders: "Pending ⏳",
+        approvedOrders: "Approved ✅",
+        purchasedOrders: "Purchased 🎉",
+        noOrders: "No orders found in this category.",
+        orderId: "Order ID",
+        orderDate: "Date",
+        orderStatus: "Status",
+        orderTotal: "Total Amount",
+        orderItems: "Purchased Item(s)",
+        orderPaymentMethod: "Payment Method",
+        orderTxnRef: "Txn / Ref ID",
+        orderPendingHelp: "Pending orders are awaiting payment verification from our admin team. They are usually approved within 15-30 minutes.",
+        languageOption: "App Language (ቋንቋ)",
+        currencyOption: "Display Currency",
+        themeOption: "Theme Mode",
+        darkModeLabel: "Dark Theme",
+        lightModeLabel: "Light Theme",
+        preferencesBtn: "⚙️ Display & App Preferences",
+        preferencesTitle: "Display & App Preferences",
+        preferencesSub: "Theme mode, language selection, and display currency.",
+        contactSupport: "💬 Contact Holistic Support",
+        supportTelegram: "Telegram Support (@beki2_0)",
+        supportPhone: "Support Line: +251 900 000 000",
+        adminPortal: "🔐 Admin Content Manager",
+        walletBalance: "Wallet Balance",
+        deposit: "Deposit",
+        depositFunds: "Deposit Funds",
+        hideBalance: "Hide Balance",
+        showBalance: "Show Balance",
+        payWithWallet: "Pay with Wallet Balance",
+        insufficientWallet: "Insufficient Wallet Balance",
+        featuredProtocols: "Featured & VIP Secret Protocols",
+        featuredSub: "Trending longevity masterclasses, fasting secrets & private video recipes.",
+        filterCategories: "Filter Category",
+        allCategories: "All Topics",
+        vipSecretCategory: "VIP Secret Protocols",
+        comingSoonTitle: "Coming Soon!",
+        comingSoonChallengesDesc: "Exciting 7-day health challenges, seasonal detox leagues, and gamified wellness quests are currently being crafted. Stay tuned!",
+        comingSoonRankedDesc: "The live multi-user ranked leaderboard with star progression is undergoing cloud synchronizations across Telegram users. Launching very soon!",
+        notifyMe: "🔔 Notify Me When Ready",
+        notifiedThanks: "✓ You'll be notified on launch!",
+        guidesTitle: "Health & Wellness Guides",
+        guidesSub: "Curated holistic remedies, nutrition advice, and VIP secret masterclasses.",
+        readGuide: "Read Guide",
+        watchYoutube: "Watch Video",
+        addGuide: "➕ New Post / VIP Protocol",
+        editGuide: "Edit",
+        deleteGuide: "Delete",
+        addProduct: "➕ New Product",
+        close: "Close",
+        orderBtn: "Order Now",
+        currencyEtb: "ETB (Ethiopian Birr)",
+        currencyUsd: "$ USD (US Dollar)",
+        monthlyPlan: "Monthly VIP Plan (30 Days)",
+        quarterlyPlan: "Quarterly VIP (90 Days - 15% OFF)",
+        annualPlan: "Annual VIP (365 Days - 25% OFF)",
+        confirmPayment: "Submit Order & Activate",
+        paymentNote: "Transfer via Telebirr or CBE, then enter the Transaction Reference ID below to confirm.",
+        copied: "Copied! ✓"
+      },
+      am: {
+        appName: "ጤና ሆሊስቲክ",
+        subTitle: "የጤና እና የቪአይፒ (VIP) አገልግሎት",
+        tracker: "መከታተያ",
+        challenges: "ተግዳሮቶች",
+        hub: "የጤና መረጃ",
+        store: "ሱቅ",
+        settings: "ቅንብሮች",
+        welcome: "እንኳን ደህና መጡ",
+        dailyMotivationTitle: "የዕለቱ የጤና ምክርና መነሳሳት",
+        dailyMotivationText: "ሰውነትዎ በተፈጥሮ ራሱን የማደስ እና የመፈወስ ኃይል አለው። ዛሬ የምንወስዳቸው ጥቃቅን ጤናማ እርምጃዎች—ንጹህ ውሃ መጠጣት፣ የተፈጥሮ ምግቦች እና ጥራት ያለው እረፍት—ህዋሶቻችንን በማደስ ሙሉ ጤንነትን ያጎናጽፉናል።",
+        todayHabits: "የዛሬ ጤናማ ልማዶች",
+        dailyReset: "በየ 24 ሰዓቱ ይታደሳል",
+        done: "ተጠናቋል",
+        allHabitsCelebration: "🎉 ድንቅ ስራ! የዛሬው ሁሉም ጤናማ ልማዶች ተጠናቀዋል!",
+        allHabitsSub: "ዕለታዊ ጤናዎ እና የኮከብ ነጥቦችዎ ከፍ ብለዋል።",
+        starsBalance: "ኮከቦች",
+        settingsTitle: "የመተግበሪያ ቅንብሮች እና VIP መገለጫ",
+        vipStatusTitle: "የቪአይፒ (VIP) አባልነት ሁኔታ",
+        vipActive: "ንቁ የቪአይፒ (VIP) አባል 👑",
+        vipInactive: "መደበኛ አባል (ያለ ክፍያ)",
+        vipExpiresIn: "የቀረው ጊዜ፡",
+        vipMonthlyDesc: "ወርሃዊ የቪአይፒ አባልነት በሚስጥር የተያዙ የጤና እና የህክምና መመሪያዎችን፣ ልዩ ቪዲዮዎችን እና የምክር አገልግሎትን ሙሉ በሙሉ ይከፍታል።",
+        unlockVipBtn: "✨ የ VIP አባልነትን ክፈት",
+        renewVipBtn: "⚡ VIP አባልነትን አድስ",
+        orderHistoryBtn: "📦 የትዕዛዝ ታሪክ እና ደረሰኞች",
+        orderHistoryTitle: "የትዕዛዝ ታሪክ",
+        orderHistorySub: "በመጠባበቅ ላይ ያሉ፣ የጸደቁ እና የተገዙ ትዕዛዞችን ይከታተሉ።",
+        allOrders: "ሁሉም ትዕዛዞች",
+        pendingOrders: "በመጠባበቅ ላይ ⏳",
+        approvedOrders: "የጸደቁ ✅",
+        purchasedOrders: "የተገዙ 🎉",
+        noOrders: "በዚህ ምድብ ምንም ትዕዛዝ አልተገኘም።",
+        orderId: "የትዕዛዝ ቁጥር",
+        orderDate: "ቀን",
+        orderStatus: "ሁኔታ",
+        orderTotal: "ጠቅላላ ዋጋ",
+        orderItems: "የታዘዘው ዕቃ / አገልግሎት",
+        orderPaymentMethod: "የመክፈያ ዘዴ",
+        orderTxnRef: "የደረሰኝ መለያ (Txn ID)",
+        orderPendingHelp: "በመጠባበቅ ላይ ያሉ ትዕዛዞች በክፍያ አረጋጋጭ ቡድናችን እየታዩ ናቸው። በአብዛኛው ከ 15-30 ደቂቃዎች ውስጥ ይጸድቃሉ።",
+        languageOption: "የመተግበሪያ ቋንቋ",
+        currencyOption: "የገንዘብ አይነት (Currency)",
+        themeOption: "የገጽታ ቀለም",
+        darkModeLabel: "ጨለማ ገጽታ (Dark)",
+        lightModeLabel: "ብርሃን ገጽታ (Light)",
+        preferencesBtn: "⚙️ የገጽታ እና የመተግበሪያ ምርጫዎች",
+        preferencesTitle: "የገጽታ እና የመተግበሪያ ምርጫዎች",
+        preferencesSub: "የገጽታ ቀለም፣ የመተግበሪያ ቋንቋ እና የገንዘብ አይነት።",
+        contactSupport: "💬 የጤና ድጋፍ ማዕከልን ያነጋግሩ",
+        supportTelegram: "የቴሌግራም ድጋፍ (@beki2_0)",
+        supportPhone: "የድጋፍ ስልክ፡ +251 900 000 000",
+        adminPortal: "🔐 የአድሚን ማስተዳደሪያ",
+        walletBalance: "የዋሌት ሂሳብ",
+        deposit: "ገንዘብ አስገባ (Deposit)",
+        depositFunds: "ገንዘብ አስገባ (Deposit)",
+        hideBalance: "ሂሳብ ደብቅ",
+        showBalance: "ሂሳብ አሳይ",
+        payWithWallet: "በዋሌት ሂሳብ ይክፈሉ",
+        insufficientWallet: "በቂ የዋሌት ሂሳብ የለም",
+        featuredProtocols: "ተወዳጅ እና ሚስጥራዊ የ VIP መመሪያዎች",
+        featuredSub: "አዳዲስ የረጅም ዕድሜ ምስጢሮች፣ የጾም መመሪያዎች እና የቪዲዮ ትምህርቶች።",
+        filterCategories: "ምድብ ይምረጡ",
+        allCategories: "ሁሉም ርዕሶች",
+        vipSecretCategory: "የ VIP ሚስጥራዊ መመሪያዎች",
+        comingSoonTitle: "በቅርቡ ይጠብቁ! (Coming Soon)",
+        comingSoonChallengesDesc: "አዳዲስ የ 7-ቀን የጤና ተግዳሮቶች እና የልምምድ ውድድሮች በዝግጅት ላይ ናቸው። በቅርብ ቀን ይጀምራል!",
+        comingSoonRankedDesc: "በቴሌግራም ተጠቃሚዎች መካከል ያለው የቀጥታ የደረጃ ሰሌዳ ዝግጅት እየተጠናቀቀ ነው። በቅርብ ቀን ይለቀቃል!",
+        notifyMe: "🔔 ሲጀመር አሳውቀኝ",
+        notifiedThanks: "✓ ልክ ሲጀመር መልዕክት ይደርስዎታል!",
+        guidesTitle: "የጤና እና የህክምና መመሪያዎች",
+        guidesSub: "የተፈጥሮ መፍትሄዎች፣ የአመጋገብ ምክሮች እና ሚስጥራዊ የ VIP መመሪያዎች።",
+        readGuide: "መመሪያውን አንብብ",
+        watchYoutube: "ቪዲዮ ይመልከቱ",
+        addGuide: "➕ አዲስ ጽሁፍ / VIP ሚስጥር",
+        editGuide: "አድስ",
+        deleteGuide: "ሰርዝ",
+        addProduct: "➕ አዲስ እቃ ጨምር",
+        close: "ዝጋ",
+        orderBtn: "እዘዝ",
+        currencyEtb: "በኢትዮጵያ ብር (ETB)",
+        currencyUsd: "በዶላር ($ USD)",
+        monthlyPlan: "የ 1 ወር VIP እቅድ (30 ቀናት)",
+        quarterlyPlan: "የ 3 ወር VIP እቅድ (90 ቀናት - 15% ቅናሽ)",
+        annualPlan: "የ 1 ዓመት VIP እቅድ (365 ቀናት - 25% ቅናሽ)",
+        confirmPayment: "ትዕዛዝ አስገባና VIP ክፈት",
+        paymentNote: "በቴሌብር ወይም በንግድ ባንክ ክፍያ ከፈጸሙ በኋላ የደረሰኝ ቁጥሩን (Txn ID) ከስር በማስገባት ትዕዛዝዎን ያረጋግጡ።",
+        copied: "ተቀድቷል! ✓"
+      }
+    };
+
+    const DEFAULT_HABITS = [
+      { id: 1, text: "30-min brisk movement or stretch", amText: "30 ደቂቃ የእግር ጉዞ ወይም እንቅስቃሴ", xp: 15, icon: "🏃" },
+      { id: 2, text: "Drink Tena herbal infusion tea", amText: "የጤና እፅዋት ሻይ መጠጣት", xp: 10, icon: "🍵" },
+      { id: 3, text: "Eat a fresh nutrient-dense meal", amText: "የተመጣጠነ እና ተፈጥሯዊ ምግብ መመገብ", xp: 15, icon: "🥗" },
+      { id: 4, text: "7–8 hours restful sleep", amText: "ከ 7-8 ሰዓታት ጥራት ያለው እንቅልፍ", xp: 20, icon: "🌙" }
+    ];
+
+    const INITIAL_ARTICLES = [
+      {
+        id: "vip_secret_1",
+        category: "VIP Secret Protocol",
+        title: "Ancient Herbal Cellular Longevity & Metabolic Secret",
+        snippet: "A restricted holistic blueprint for cellular autophagy, deep anti-aging, and herbal infusions available only to VIP members.",
+        isVipOnly: true,
+        isFeatured: true,
+        badge: "🔥 Trending VIP",
+        isComingSoon: true,
+        youtubeUrl: "",
+        thumbnail: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80",
+        readTime: "7 min",
+        content: `### 💎 VIP Secret Health Protocol (Exclusive Access)
+*(This masterclass and accompanying private video protocol are curated exclusively for monthly VIP Subscribers and are releasing fully in the upcoming cycle.)*
+
+#### Core Principles of the VIP Secret Protocol:
+1. **Targeted Fasting Windows**: Synergizing 16:8 circadian fasting with mountain herb infusions.
+2. **Cellular Autophagy Activation**: Eliminating damaged senescent cells with concentrated polyphenols.
+3. **Mitochondrial Vitality**: Traditional Ethiopian botanical tonics that boost cellular ATP production without jittery stimulants.
+
+*Stay tuned as full downloadable audio-guides and video recipes unlock for VIP subscribers.*`
+      },
+      {
+        id: "vip_secret_2",
+        category: "VIP Secret Protocol",
+        title: "Deep Cellular Autophagy & 48-Hour Botanical Detox",
+        snippet: "Step-by-step masterclass on activating stem cell renewal and digestive resting pathways through organic herbal decoctions.",
+        isVipOnly: true,
+        isFeatured: true,
+        badge: "✨ New Release",
+        isComingSoon: false,
+        youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80",
+        readTime: "8 min",
+        content: `### 💎 48-Hour Botanical Detox & Stem Cell Renewal
+*(Exclusive Masterclass for VIP Members)*
+
+#### The 3-Phase Botanical Cleanse:
+1. **Phase 1 (Preparation)**: Eliminating inflammatory nightshades and loading gut microbiome with prebiotic Teff extract and lukewarm ginger tea.
+2. **Phase 2 (Autophagy Window)**: 48-hour fasting supported by cold-brewed rosemary and mountain moringa broth to preserve electrolyte balance.
+3. **Phase 3 (Microbiome Re-inoculation)**: Breaking fast with raw fermented flax jelly and steamed bitter greens.
+
+*Benefits: Rapid abdominal de-bloating, stabilized morning glucose, and heightened mental clarity.*`
+      },
+      {
+        id: "vip_secret_3",
+        category: "VIP Secret Protocol",
+        title: "Circadian Hormone Optimization & REM Sleep Protocol",
+        snippet: "Reverse cortisol spikes, stabilize thyroid signaling, and double deep slow-wave restorative sleep naturally.",
+        isVipOnly: true,
+        isFeatured: true,
+        badge: "⭐ VIP Masterclass",
+        isComingSoon: false,
+        youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&auto=format&fit=crop&q=80",
+        readTime: "6 min",
+        content: `### 💎 Circadian Alignment & Neuro-Endocrine Reset
+*(VIP Exclusive Protocol)*
+
+#### Key Hormonal Reset Levers:
+1. **Morning Lux Exposure**: 10 minutes of direct morning sunlight within 30 minutes of waking to set cortisol peaks correctly.
+2. **Evening Melatonin Preservation**: Ceasing blue light exposure 90 minutes before bed and drinking warm chamomile with pure Ethiopian raw honey.
+3. **Magnesium & Herbal Glycinate**: Synergistic minerals that relax autonomic nervous tension and induce deep delta brainwaves.`
+      },
+      {
+        id: "1",
+        category: "Cancer Care",
+        title: "Anti-Inflammatory Nutrition & Cellular Defense",
+        snippet: "Antioxidant-rich Ethiopian herbs, garlic, ginger, and habits to reduce systemic inflammation.",
+        isVipOnly: false,
+        isFeatured: true,
+        badge: "🌿 Editor's Pick",
+        youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80",
+        readTime: "5 min",
+        content: `### Holistic Anti-Inflammatory Principles
+1. **Antioxidant Superfoods**: Incorporate fresh ginger, turmeric, moringa, and raw garlic into your weekly meals.
+2. **Eliminate Ultra-Processed Foods**: Avoid refined seed oils, artificial sweeteners, and excess sugars.
+3. **Gut Health**: Fermented foods nourish gut bacteria, which govern over 70% of the immune system.`
+      },
+      {
+        id: "2",
+        category: "Diabetes",
+        title: "Natural Blood Sugar Stabilization & Insulin Health",
+        snippet: "How whole grains like Teff, fiber, and intermittent fasting prevent insulin spikes.",
+        isVipOnly: false,
+        youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=600&auto=format&fit=crop&q=80",
+        readTime: "4 min",
+        content: `### Managing Insulin Sensitivity Naturally
+1. **Low Glycemic Whole Grains**: Teff and legumes release carbohydrates slowly, preventing insulin spikes.
+2. **Cinnamon & Fenugreek (Abish)**: Traditional herbal remedies that aid glucose uptake into cells.
+3. **Post-Meal Walking**: A 15-minute walk right after meals helps muscles absorb glucose naturally.`
+      },
+      {
+        id: "3",
+        category: "Weight Loss",
+        title: "Natural Metabolism Acceleration & Mindful Satiety",
+        snippet: "Sustainable fat metabolism through hydration, herbal thermogenics, and sleep balance.",
+        isVipOnly: false,
+        youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&auto=format&fit=crop&q=80",
+        readTime: "6 min",
+        content: `### Holistic Weight Balance Strategies
+1. **Hydration Before Meals**: Drinking 500ml of room temperature water 30 minutes before eating aids enzymatic digestion.
+2. **Herbal Tea Infusions**: Green tea and rosemary extract stimulate thermogenesis.
+3. **Restorative Sleep**: Quality deep sleep balances ghrelin and leptin, the natural hunger hormones.`
+      },
+      {
+        id: "4",
+        category: "Heart Health",
+        title: "Cardiovascular Resilience & Nitric Oxide Foods",
+        snippet: "Boosting blood flow and arterial elasticity with beetroots, flaxseed, and breathing exercises.",
+        isVipOnly: false,
+        youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=600&auto=format&fit=crop&q=80",
+        readTime: "5 min",
+        content: `### Supporting Cardiovascular Health Naturally
+1. **Nitric Oxide Rich Foods**: Beets and leafy dark greens naturally relax vascular smooth muscle.
+2. **Omega-3 Fatty Acids**: Flaxseeds and walnuts help maintain balanced lipid profiles.
+3. **Coherence Breathing**: 5 minutes of 5-second inhalations and exhalations lowers resting heart rate.`
+      }
+    ];
+
+    const STORE_PRODUCTS = [
+      {
+        id: "p1",
+        title: "Organic Moringa Leaf Powder (250g)",
+        etbPrice: 450,
+        usdPrice: 8.00,
+        category: "Herbs & Nutrition",
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80",
+        description: "Pure powdered moringa leaves rich in iron, antioxidants, and essential plant vitamins."
+      },
+      {
+        id: "p2",
+        title: "Pure Raw Ethiopian Forest Honey (500g)",
+        etbPrice: 650,
+        usdPrice: 12.00,
+        category: "Herbs & Nutrition",
+        image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&auto=format&fit=crop&q=80",
+        description: "100% natural raw honey with powerful antimicrobial and throat-soothing benefits."
+      },
+      {
+        id: "p3",
+        title: "Tena Herbal Detox Tea Blend (30 Bags)",
+        etbPrice: 380,
+        usdPrice: 7.00,
+        category: "Herbs & Nutrition",
+        image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80",
+        description: "A soothing blend of ginger, rosemary, moringa, and lemongrass for daily digestive balance."
+      }
+    ];
+
+    const DIGITAL_BOOKS = [
+      {
+        id: "b1",
+        title: "Holistic Cancer Prevention & Cellular Health Handbook",
+        category: "Cancer Care",
+        cover: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80",
+        etbPrice: 250,
+        usdPrice: 4.99,
+        starPrice: 300,
+        chapters: [
+          { title: "Chapter 1: The Biology of Cellular Repair", text: "Chronic stress and poor nutrition damage cell membranes. By adopting anti-inflammatory foods, we activate deep cellular renewal pathways..." },
+          { title: "Chapter 2: Essential Ethiopian Herbs & Roots", text: "Moringa, ginger, turmeric, and garlic have been used for centuries to support cellular longevity and immune health..." },
+          { title: "Chapter 3: Daily Habits for Deep Detoxification", text: "Hydration protocols, thermal therapies, and gentle movement help the lymphatic system clear out metabolic waste..." }
+        ]
+      }
+    ];
+
+    const CATEGORY_ICONS = {
+      "All": "✨",
+      "VIP Secret Protocol": "💎",
+      "Cancer Care": "🎗️",
+      "Diabetes": "🩸",
+      "Weight Loss": "⚖️",
+      "Heart Health": "❤️",
+      "Herbs & Nutrition": "🌿",
+      "Mental Wellness": "🧘"
+    };
+
+    function getInitialTelegramProfile() {
+      let uid = 'user_' + Math.random().toString(36).substring(2, 9);
+      let uname = "Friend";
+      let uusername = "";
+      let uphone = "";
+      let uphoto = null;
+
+      try {
+        if (window.Telegram?.WebApp) {
+          const tg = window.Telegram.WebApp;
+          tg.ready();
+          tg.expand();
+          if (tg.initDataUnsafe?.user?.id) {
+            uid = String(tg.initDataUnsafe.user.id);
+          }
+          if (tg.initDataUnsafe?.user?.first_name) {
+            uname = tg.initDataUnsafe.user.last_name
+              ? `${tg.initDataUnsafe.user.first_name} ${tg.initDataUnsafe.user.last_name}`
+              : tg.initDataUnsafe.user.first_name;
+          }
+          if (tg.initDataUnsafe?.user?.username) {
+            uusername = tg.initDataUnsafe.user.username;
+          }
+          if (tg.initDataUnsafe?.user?.photo_url) {
+            uphoto = tg.initDataUnsafe.user.photo_url;
+          }
+        }
+      } catch(e) {}
+
+      const savedUid = localStorage.getItem('tena_device_uid');
+      if (savedUid && uid.startsWith('user_')) {
+        uid = savedUid;
+      } else if (!savedUid) {
+        localStorage.setItem('tena_device_uid', uid);
+      }
+
+      return { uid, uname, uusername, uphone, uphoto };
+    }
+
+    function App() {
+      const [lang, setLang] = useState(() => localStorage.getItem('tena_app_lang') || 'en');
+      const [currency, setCurrency] = useState(() => localStorage.getItem('tena_app_currency') || 'ETB'); // 'ETB' | 'USD'
+      const [darkMode, setDarkMode] = useState(() => {
+        try {
+          const saved = localStorage.getItem('tena_app_theme');
+          if (saved === 'dark') return true;
+          if (saved === 'light') return false;
+          if (window.Telegram?.WebApp?.colorScheme === 'dark') return true;
+          return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        } catch(e) { return false; }
+      });
+
+      const [activeTab, setActiveTab] = useState('tracker'); // 'tracker' | 'challenges' | 'hub' | 'store' | 'settings'
+      const initProfile = useMemo(() => getInitialTelegramProfile(), []);
+      const [userId, setUserId] = useState(initProfile.uid);
+      const [userName, setUserName] = useState(initProfile.uname);
+      const [userUsername, setUserUsername] = useState(initProfile.uusername);
+      const [userPhone, setUserPhone] = useState(initProfile.uphone);
+      const [userPhoto, setUserPhoto] = useState(initProfile.uphoto);
+      const [isAdmin, setIsAdmin] = useState(() => isUserAdmin(initProfile.uusername, initProfile.uphone));
+
+      // User Wellness Stars (Preserved)
+      const [userStars, setUserStars] = useState(() => {
+        const saved = localStorage.getItem(`tena_${initProfile.uid}_stars`);
+        return saved ? parseInt(saved, 10) : 45;
+      });
+
+      // User Wallet Balance State & Visibility (Default 1250 ETB for smooth testing)
+      const [walletBalance, setWalletBalance] = useState(() => {
+        const saved = localStorage.getItem(`tena_${initProfile.uid}_wallet_balance`);
+        return saved !== null ? parseFloat(saved) : 1250;
+      });
+      const [isBalanceHidden, setIsBalanceHidden] = useState(() => {
+        return localStorage.getItem(`tena_${initProfile.uid}_balance_hidden`) === 'true';
+      });
+      const [showTopUpModal, setShowTopUpModal] = useState(false);
+      const [showPreferencesModal, setShowPreferencesModal] = useState(false);
+      const [topUpAmount, setTopUpAmount] = useState(500);
+      const [topUpMethod, setTopUpMethod] = useState('telebirr');
+      const [topUpTxnRef, setTopUpTxnRef] = useState('');
+      const [isSubmittingTopUp, setIsSubmittingTopUp] = useState(false);
+      const [insufficientBalanceNotice, setInsufficientBalanceNotice] = useState(false);
+
+      const [completedHabits, setCompletedHabits] = useState(() => {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const lastDate = localStorage.getItem(`tena_${initProfile.uid}_last_date`);
+        if (lastDate !== todayStr) {
+          localStorage.setItem(`tena_${initProfile.uid}_last_date`, todayStr);
+          localStorage.setItem(`tena_${initProfile.uid}_habits`, JSON.stringify([]));
+          return [];
+        }
+        const saved = localStorage.getItem(`tena_${initProfile.uid}_habits`);
+        return saved ? JSON.parse(saved) : [];
+      });
+
+      // VIP Membership State
+      const [isVip, setIsVip] = useState(() => {
+        const saved = localStorage.getItem(`tena_${initProfile.uid}_is_vip`);
+        return saved === 'true';
+      });
+      const [vipExpiryDate, setVipExpiryDate] = useState(() => {
+        return localStorage.getItem(`tena_${initProfile.uid}_vip_expires`) || null;
+      });
+      const [showVipModal, setShowVipModal] = useState(false);
+      const [selectedVipPlan, setSelectedVipPlan] = useState('monthly'); // 'monthly' | 'quarterly' | 'annual'
+      const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('telebirr');
+      const [vipTxnRef, setVipTxnRef] = useState('');
+      const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+      const [vipPurchaseSuccess, setVipPurchaseSuccess] = useState(false);
+      const [vipInsufficientNotice, setVipInsufficientNotice] = useState(false);
+
+      // Orders State (Pending, Approved, Purchased)
+      const [orders, setOrders] = useState(() => {
+        const saved = localStorage.getItem(`tena_${initProfile.uid}_orders`);
+        if (saved) {
+          try { return JSON.parse(saved); } catch(e) {}
+        }
+        // Initial sample orders so user immediately understands the workflow
+        return [
+          {
+            id: "ORD-9421",
+            title: "VIP Monthly Membership",
+            type: "VIP Subscription",
+            amount: 350,
+            currency: "ETB",
+            status: "purchased", // 'pending' | 'approved' | 'purchased'
+            date: new Date(Date.now() - 3 * 86400000).toLocaleDateString(),
+            paymentMethod: "Telebirr",
+            txnRef: "FT2623912093"
+          },
+          {
+            id: "ORD-8812",
+            title: "Organic Moringa Leaf Powder (250g)",
+            type: "Physical Product",
+            amount: 450,
+            currency: "ETB",
+            status: "approved",
+            date: new Date(Date.now() - 1 * 86400000).toLocaleDateString(),
+            paymentMethod: "CBE Bank",
+            txnRef: "CBE-9940128"
+          }
+        ];
+      });
+
+      const [showOrderHistoryModal, setShowOrderHistoryModal] = useState(false);
+      const [orderFilterTab, setOrderFilterTab] = useState('all'); // 'all' | 'pending' | 'approved' | 'purchased'
+
+      // Health Hub Category Dropdown state
+      const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
+      const [selectedCat, setSelectedCat] = useState("All");
+      const [searchQuery, setSearchQuery] = useState("");
+      const dropdownRef = useRef(null);
+
+      // Coming soon notification
+      const [hasNotifiedComingSoon, setHasNotifiedComingSoon] = useState(false);
+
+      // Digital Books & Reader
+      const [unlockedBooks, setUnlockedBooks] = useState(() => {
+        const saved = localStorage.getItem(`tena_${initProfile.uid}_books`);
+        return saved ? JSON.parse(saved) : [];
+      });
+      const [selectedBook, setSelectedBook] = useState(null);
+      const [selectedArticle, setSelectedArticle] = useState(null);
+
+      // Product order modal
+      const [orderingProduct, setOrderingProduct] = useState(null);
+      const [productOrderTxn, setProductOrderTxn] = useState('');
+      const [productOrderSuccess, setProductOrderSuccess] = useState(false);
+
+      // Dynamic Articles & Store Products State (With LocalStorage Persistence)
+      const [articles, setArticles] = useState(() => {
+        const saved = localStorage.getItem('tena_articles');
+        if (saved) {
+          try { return JSON.parse(saved); } catch(e) {}
+        }
+        return INITIAL_ARTICLES;
+      });
+
+      const [products, setProducts] = useState(() => {
+        const saved = localStorage.getItem('tena_products');
+        if (saved) {
+          try { return JSON.parse(saved); } catch(e) {}
+        }
+        return STORE_PRODUCTS;
+      });
+
+      // Carousel reference
+      const carouselRef = useRef(null);
+
+      // Admin Modal & Forms
+      const [showAdminPanel, setShowAdminPanel] = useState(false);
+      const [adminTab, setAdminTab] = useState('articles'); // 'articles' | 'store' | 'orders'
+      const [copyNotice, setCopyNotice] = useState("");
+
+      // Article Create / Edit Modal State
+      const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
+      const [articleForm, setArticleForm] = useState({
+        id: '',
+        title: '',
+        category: 'VIP Secret Protocol',
+        snippet: '',
+        content: '',
+        thumbnail: '',
+        readTime: '6 min',
+        youtubeUrl: '',
+        badge: '🔥 Trending VIP',
+        isVipOnly: true,
+        isComingSoon: false,
+        isFeatured: true
+      });
+
+      // Product Create / Edit Modal State
+      const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+      const [productForm, setProductForm] = useState({
+        id: '',
+        title: '',
+        category: 'Herbs & Nutrition',
+        description: '',
+        etbPrice: 400,
+        usdPrice: 7.99,
+        image: ''
+      });
+
+      const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
+      // Sync latest Articles and Products from backend API (cross-device polling, tab visibility re-sync, and live cross-tab storage sync)
+      useEffect(() => {
+        const syncContent = () => {
+          fetch('/api/articles')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+              if (data && data.success && Array.isArray(data.articles)) {
+                setArticles(data.articles);
+                localStorage.setItem('tena_articles', JSON.stringify(data.articles));
+              }
+            })
+            .catch(() => {});
+
+          fetch('/api/products')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+              if (data && data.success && Array.isArray(data.products)) {
+                setProducts(data.products);
+                localStorage.setItem('tena_products', JSON.stringify(data.products));
+              }
+            })
+            .catch(() => {});
+        };
+
+        // 1. Initial fetch on mount / app open
+        syncContent();
+
+        // 2. Active polling interval (checks every 5 seconds for newly published items by admin)
+        const pollInterval = setInterval(syncContent, 5000);
+
+        // 3. Whenever user focuses back on the tab or switches back to Telegram mini-app window
+        const handleVisibilityOrFocus = () => {
+          if (!document.hidden) {
+            syncContent();
+          }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+        window.addEventListener('focus', handleVisibilityOrFocus);
+
+        // 4. Real-time synchronization when Admin updates items in another tab or portal on the same browser
+        const handleStorageChange = (e) => {
+          if (e.key === 'tena_articles' && e.newValue) {
+            try {
+              const updated = JSON.parse(e.newValue);
+              if (Array.isArray(updated)) setArticles(updated);
+            } catch (err) {}
+          }
+          if (e.key === 'tena_products' && e.newValue) {
+            try {
+              const updated = JSON.parse(e.newValue);
+              if (Array.isArray(updated)) setProducts(updated);
+            } catch (err) {}
+          }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => {
+          clearInterval(pollInterval);
+          document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+          window.removeEventListener('focus', handleVisibilityOrFocus);
+          window.removeEventListener('storage', handleStorageChange);
+        };
+      }, []);
+
+      // Persist articles & products
+      useEffect(() => {
+        if (articles && articles.length > 0) {
+          localStorage.setItem('tena_articles', JSON.stringify(articles));
+        }
+      }, [articles]);
+
+      useEffect(() => {
+        if (products && products.length > 0) {
+          localStorage.setItem('tena_products', JSON.stringify(products));
+        }
+      }, [products]);
+
+      // Close dropdown when clicking outside
+      useEffect(() => {
+        function handleClickOutside(event) {
+          if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            setIsCatDropdownOpen(false);
+          }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+      }, []);
+
+      // Theme synchronization
+      useEffect(() => {
+        if (darkMode) {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('tena_app_theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('tena_app_theme', 'light');
+        }
+      }, [darkMode]);
+
+      useEffect(() => {
+        localStorage.setItem('tena_app_lang', lang);
+      }, [lang]);
+
+      useEffect(() => {
+        localStorage.setItem('tena_app_currency', currency);
+      }, [currency]);
+
+      useEffect(() => {
+        localStorage.setItem(`tena_${userId}_orders`, JSON.stringify(orders));
+      }, [orders, userId]);
+
+      // Calculate days remaining on VIP
+      const vipDaysRemaining = useMemo(() => {
+        if (!isVip || !vipExpiryDate) return 0;
+        const diff = new Date(vipExpiryDate).getTime() - Date.now();
+        return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+      }, [isVip, vipExpiryDate]);
+
+      // Update Star XP
+      const updateStars = (delta) => {
+        setUserStars(prev => {
+          const val = Math.max(0, prev + delta);
+          localStorage.setItem(`tena_${userId}_stars`, String(val));
+          return val;
+        });
+      };
+
+      const toggleHabit = (habit) => {
+        const isDone = completedHabits.includes(habit.id);
+        const updated = isDone ? completedHabits.filter(id => id !== habit.id) : [...completedHabits, habit.id];
+        setCompletedHabits(updated);
+        localStorage.setItem(`tena_${userId}_habits`, JSON.stringify(updated));
+        updateStars(isDone ? -habit.xp : habit.xp);
+
+        if (!isDone && updated.length === DEFAULT_HABITS.length) {
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 80,
+              spread: 80,
+              origin: { y: 0.6 },
+              colors: ['#ec4899', '#38bdf8', '#fb7185', '#0284c7', '#c084fc']
+            });
+          }
+        }
+      };
+
+      const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        setCopyNotice(text);
+        setTimeout(() => setCopyNotice(""), 2200);
+      };
+
+      // Currency formatted display helper
+      const formatPrice = (etbVal, usdVal) => {
+        if (currency === 'USD') {
+          return `$${Number(usdVal).toFixed(2)} USD`;
+        }
+        return `${etbVal} ETB`;
+      };
+
+      // Helper to add order to order history
+      const addOrder = (orderData) => {
+        const newOrder = {
+          id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+          date: new Date().toLocaleDateString(),
+          status: 'pending', // Starts in pending for verification
+          ...orderData
+        };
+        const updated = [newOrder, ...orders];
+        setOrders(updated);
+        try {
+          localStorage.setItem('tena_orders', JSON.stringify(updated));
+          fetch('/api/orders/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newOrder)
+          }).catch(() => {});
+        } catch(e) {}
+        return newOrder;
+      };
+
+      // VIP Plan Configuration
+      const VIP_PLANS = {
+        monthly: { id: 'monthly', days: 30, etbPrice: 350, usdPrice: 5.99 },
+        quarterly: { id: 'quarterly', days: 90, etbPrice: 900, usdPrice: 14.99 },
+        annual: { id: 'annual', days: 365, etbPrice: 3000, usdPrice: 49.99 }
+      };
+
+      // VIP Activation directly via Wallet Balance
+      const handleActivateVipOrder = () => {
+        const plan = VIP_PLANS[selectedVipPlan] || VIP_PLANS.monthly;
+        const costEtb = plan.etbPrice;
+        const costDisplay = currency === 'USD' ? plan.usdPrice : plan.etbPrice;
+
+        if (walletBalance < costEtb) {
+          setVipInsufficientNotice(true);
+          return;
+        }
+
+        setIsSubmittingOrder(true);
+        const newBal = walletBalance - costEtb;
+        setWalletBalance(newBal);
+        localStorage.setItem(`tena_${userId}_wallet_balance`, String(newBal));
+
+        const expDate = new Date(Date.now() + (plan.days * 24 * 60 * 60 * 1000)).toISOString();
+        setIsVip(true);
+        setVipExpiryDate(expDate);
+        localStorage.setItem(`tena_${userId}_is_vip`, 'true');
+        localStorage.setItem(`tena_${userId}_vip_expires`, expDate);
+
+        // Add to Order History
+        addOrder({
+          title: `VIP ${selectedVipPlan.toUpperCase()} Membership`,
+          type: "VIP Membership",
+          amount: costDisplay,
+          currency: currency,
+          paymentMethod: "Wallet Balance (Direct)",
+          txnRef: `VIP-${Date.now().toString().slice(-6)}`,
+          status: "purchased"
+        });
+
+        setVipPurchaseSuccess(true);
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 110,
+            spread: 90,
+            origin: { y: 0.5 },
+            colors: ['#ec4899', '#38bdf8', '#a855f7', '#0284c7', '#10b981']
+          });
+        }
+
+        setTimeout(() => {
+          setIsSubmittingOrder(false);
+          setVipPurchaseSuccess(false);
+          setShowVipModal(false);
+          setVipInsufficientNotice(false);
+        }, 1400);
+      };
+
+      // Helper to calculate wallet balance in active currency
+      const displayWalletBalance = useMemo(() => {
+        if (currency === 'USD') {
+          return `$${(walletBalance / 50).toFixed(2)} USD`;
+        }
+        return `${Number(walletBalance).toLocaleString()} ETB`;
+      }, [walletBalance, currency]);
+
+      // Toggle balance visibility
+      const toggleBalanceVisibility = () => {
+        setIsBalanceHidden(prev => {
+          const next = !prev;
+          localStorage.setItem(`tena_${userId}_balance_hidden`, String(next));
+          return next;
+        });
+      };
+
+      // Top-Up Wallet Handler
+      const handleTopUpWallet = () => {
+        setIsSubmittingTopUp(true);
+        const amountToAddInEtb = currency === 'USD' ? topUpAmount * 50 : topUpAmount;
+        const newBal = walletBalance + amountToAddInEtb;
+        
+        setWalletBalance(newBal);
+        localStorage.setItem(`tena_${userId}_wallet_balance`, String(newBal));
+
+        addOrder({
+          title: `Wallet Deposit (${currency === 'USD' ? '$' + topUpAmount + ' USD' : topUpAmount + ' ETB'})`,
+          type: "Wallet Deposit",
+          amount: topUpAmount,
+          currency: currency,
+          paymentMethod: topUpMethod === 'telebirr' ? 'Telebirr' : (topUpMethod === 'cbe' ? 'CBE Bank' : 'Online / Card'),
+          txnRef: topUpTxnRef || `DEP-${Date.now().toString().slice(-6)}`,
+          status: "purchased"
+        });
+
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 90,
+            spread: 80,
+            origin: { y: 0.55 },
+            colors: ['#38bdf8', '#ec4899', '#10b981', '#a855f7']
+          });
+        }
+
+        setTimeout(() => {
+          setIsSubmittingTopUp(false);
+          setShowTopUpModal(false);
+          setTopUpTxnRef('');
+        }, 1000);
+      };
+
+      // Direct Wallet Purchase for Products
+      const handleWalletProductPurchase = () => {
+        if (!orderingProduct) return;
+        const costEtb = orderingProduct.etbPrice;
+        const costDisplay = currency === 'USD' ? orderingProduct.usdPrice : orderingProduct.etbPrice;
+
+        if (walletBalance < costEtb) {
+          setInsufficientBalanceNotice(true);
+          return;
+        }
+
+        const newBal = walletBalance - costEtb;
+        setWalletBalance(newBal);
+        localStorage.setItem(`tena_${userId}_wallet_balance`, String(newBal));
+
+        addOrder({
+          title: orderingProduct.title,
+          type: "Store Product",
+          amount: costDisplay,
+          currency: currency,
+          paymentMethod: "Wallet Balance (Direct)",
+          txnRef: `WAL-ORD-${Date.now().toString().slice(-6)}`,
+          status: "purchased"
+        });
+
+        setProductOrderSuccess(true);
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 75, spread: 80, origin: { y: 0.6 }, colors: ['#ec4899', '#38bdf8', '#10b981'] });
+        }
+
+        setTimeout(() => {
+          setProductOrderSuccess(false);
+          setOrderingProduct(null);
+          setInsufficientBalanceNotice(false);
+        }, 1500);
+      };
+
+      // Direct Wallet Purchase for Digital E-Books
+      const handleWalletBookPurchase = (book) => {
+        const costEtb = book.etbPrice;
+        const costDisplay = currency === 'USD' ? book.usdPrice : book.etbPrice;
+
+        if (walletBalance < costEtb) {
+          setOrderingProduct({
+            title: book.title,
+            etbPrice: book.etbPrice,
+            usdPrice: book.usdPrice,
+            image: book.cover
+          });
+          setInsufficientBalanceNotice(true);
+          return;
+        }
+
+        const newBal = walletBalance - costEtb;
+        setWalletBalance(newBal);
+        localStorage.setItem(`tena_${userId}_wallet_balance`, String(newBal));
+
+        addOrder({
+          title: book.title,
+          type: "Digital E-Book",
+          amount: costDisplay,
+          currency: currency,
+          paymentMethod: "Wallet Balance",
+          txnRef: `EBK-${Date.now().toString().slice(-6)}`,
+          status: "purchased"
+        });
+
+        const updatedBooks = [...unlockedBooks, book.id];
+        setUnlockedBooks(updatedBooks);
+        localStorage.setItem(`tena_${userId}_books`, JSON.stringify(updatedBooks));
+        setSelectedBook(book);
+
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+        }
+      };
+
+      // Store Product Order Modal trigger
+      const handleProductOrder = () => {
+        handleWalletProductPurchase();
+      };
+
+      // Admin toggle order status
+      const handleUpdateOrderStatus = (orderId, newStatus) => {
+        const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+        setOrders(updated);
+      };
+
+      // Admin CRUD Handlers for Health Hub Articles & VIP Protocols
+      const handleOpenNewArticle = () => {
+        setArticleForm({
+          id: 'art_' + Date.now(),
+          title: '',
+          category: selectedCat !== 'All' ? selectedCat : 'VIP Secret Protocol',
+          snippet: '',
+          content: '### Key Health Principles:\n1. Natural detoxification and cellular renewal.\n2. Therapeutic fasting timing & herbal synergy.\n3. Daily hydration & micro-nutrient replenishment.',
+          thumbnail: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80',
+          readTime: '6 min',
+          youtubeUrl: '',
+          badge: '🔥 Trending VIP',
+          isVipOnly: true,
+          isComingSoon: false,
+          isFeatured: true
+        });
+        setIsArticleModalOpen(true);
+      };
+
+      const handleEditArticle = (art) => {
+        setArticleForm({
+          id: art.id,
+          title: art.title || '',
+          category: art.category || 'VIP Secret Protocol',
+          snippet: art.snippet || '',
+          content: art.content || '',
+          thumbnail: art.thumbnail || '',
+          readTime: art.readTime || '5 min',
+          youtubeUrl: art.youtubeUrl || '',
+          badge: art.badge || (art.isVipOnly ? '💎 VIP Secret' : '🌿 Health Guide'),
+          isVipOnly: Boolean(art.isVipOnly),
+          isComingSoon: Boolean(art.isComingSoon),
+          isFeatured: Boolean(art.isFeatured)
+        });
+        setIsArticleModalOpen(true);
+      };
+
+      const handleSaveArticle = (e) => {
+        if (e) e.preventDefault();
+        if (!articleForm.title.trim()) {
+          alert("Please enter an article title.");
+          return;
+        }
+
+        setArticles(prev => {
+          const exists = prev.some(a => a.id === articleForm.id);
+          let updated;
+          if (exists) {
+            updated = prev.map(a => a.id === articleForm.id ? { ...a, ...articleForm } : a);
+          } else {
+            updated = [{ ...articleForm }, ...prev];
+          }
+          localStorage.setItem('tena_articles', JSON.stringify(updated));
+          return updated;
+        });
+
+        setIsArticleModalOpen(false);
+      };
+
+      const handleDeleteArticle = (artId) => {
+        if (window.confirm("Are you sure you want to remove this post?")) {
+          setArticles(prev => {
+            const updated = prev.filter(a => a.id !== artId);
+            localStorage.setItem('tena_articles', JSON.stringify(updated));
+            return updated;
+          });
+          if (selectedArticle && selectedArticle.id === artId) {
+            setSelectedArticle(null);
+          }
+        }
+      };
+
+      // Admin CRUD Handlers for Store Products
+      const handleOpenNewProduct = () => {
+        setProductForm({
+          id: 'prod_' + Date.now(),
+          title: '',
+          category: 'Herbs & Nutrition',
+          description: '',
+          etbPrice: 400,
+          usdPrice: 7.99,
+          image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80'
+        });
+        setIsProductModalOpen(true);
+      };
+
+      const handleEditProduct = (prod) => {
+        setProductForm({
+          id: prod.id,
+          title: prod.title || '',
+          category: prod.category || 'Herbs & Nutrition',
+          description: prod.description || '',
+          etbPrice: prod.etbPrice || 400,
+          usdPrice: prod.usdPrice || 7.99,
+          image: prod.image || ''
+        });
+        setIsProductModalOpen(true);
+      };
+
+      const handleSaveProduct = (e) => {
+        if (e) e.preventDefault();
+        if (!productForm.title.trim()) {
+          alert("Please enter a product title.");
+          return;
+        }
+
+        setProducts(prev => {
+          const exists = prev.some(p => p.id === productForm.id);
+          let updated;
+          if (exists) {
+            updated = prev.map(p => p.id === productForm.id ? { ...p, ...productForm } : p);
+          } else {
+            updated = [{ ...productForm }, ...prev];
+          }
+          localStorage.setItem('tena_products', JSON.stringify(updated));
+          return updated;
+        });
+
+        setIsProductModalOpen(false);
+      };
+
+      const handleDeleteProduct = (prodId) => {
+        if (window.confirm("Are you sure you want to remove this product from the store?")) {
+          setProducts(prev => {
+            const updated = prev.filter(p => p.id !== prodId);
+            localStorage.setItem('tena_products', JSON.stringify(updated));
+            return updated;
+          });
+          if (orderingProduct && orderingProduct.id === prodId) {
+            setOrderingProduct(null);
+          }
+        }
+      };
+
+      const categoriesList = [
+        { id: "All", label: t.allCategories, icon: "✨" },
+        { id: "VIP Secret Protocol", label: t.vipSecretCategory, icon: "💎" },
+        { id: "Cancer Care", label: "Cancer Care", icon: "🎗️" },
+        { id: "Diabetes", label: "Diabetes", icon: "🩸" },
+        { id: "Weight Loss", label: "Weight Loss", icon: "⚖️" },
+        { id: "Heart Health", label: "Heart Health", icon: "❤️" },
+        { id: "Herbs & Nutrition", label: "Herbs & Nutrition", icon: "🌿" }
+      ];
+
+      return (
+        <div className="max-w-md mx-auto min-h-screen bg-slate-50 dark:bg-[#0c101c] text-slate-800 dark:text-slate-100 flex flex-col relative pb-28 font-sans transition-colors duration-300">
+          
+          {/* Soft ambient glass glows for dark & light mode (not too dark, luminous pink & blue) */}
+          <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+            <div className="absolute -top-32 -left-20 w-80 h-80 bg-pink-500/10 dark:bg-pink-500/15 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/3 -right-24 w-80 h-80 bg-sky-500/10 dark:bg-sky-500/15 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-20 left-10 w-72 h-72 bg-purple-500/10 dark:bg-purple-500/15 rounded-full blur-3xl"></div>
+          </div>
+
+          {/* HEADER: Clean & Minimalist (Stars balance kept, ETB removed per request) */}
+          <header className="bg-white/80 dark:bg-slate-900/75 backdrop-blur-xl border-b border-pink-100/70 dark:border-slate-800/80 px-4 py-3 sticky top-0 z-30 flex items-center justify-between shadow-xs">
+            <div 
+              onClick={() => {
+                window.adminTapCount = (window.adminTapCount || 0) + 1;
+                clearTimeout(window.adminTapTimer);
+                window.adminTapTimer = setTimeout(() => { window.adminTapCount = 0; }, 2000);
+                if (window.adminTapCount >= 5) {
+                  window.adminTapCount = 0;
+                  const pin = prompt("Enter Master Admin PIN:");
+                  if (pin === ADMIN_CONFIG.masterPin) {
+                    setIsAdmin(true);
+                    setShowAdminPanel(true);
+                  }
+                }
+              }}
+              className="flex items-center space-x-2.5 cursor-pointer active:scale-95 transition"
+            >
+              {/* App Brand Logo Image */}
+              <div className="w-9 h-9 rounded-2xl bg-white dark:bg-slate-800/90 p-0.5 shadow-sm shadow-pink-500/20 flex items-center justify-center border border-pink-100 dark:border-slate-700">
+                <TenaBrandLogo size={32} />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-sm font-black tracking-tight text-slate-900 dark:text-white">{t.appName}</h1>
+                  {isVip && (
+                    <span className="bg-gradient-to-r from-pink-500 to-sky-500 text-white text-[9px] font-black px-2 py-0.2 rounded-full shadow-xs">
+                      👑 VIP
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-pink-600 dark:text-pink-400 font-semibold">{t.subTitle}</p>
+              </div>
+            </div>
+
+            {/* Top Stars Indicator Only (ETB removed per request) */}
+            <div className="flex items-center">
+              <div className="flex items-center space-x-1.5 bg-pink-50/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-full border border-pink-200/80 dark:border-slate-700 shadow-xs">
+                <span className="text-xs">⭐</span>
+                <span className="text-xs font-black text-pink-600 dark:text-pink-300">{userStars}</span>
+              </div>
+            </div>
+          </header>
+
+          {/* TAB 1: DAILY TRACKER (With Motivation Paragraph & Star Balance) */}
+          {activeTab === 'tracker' && (
+            <main className="p-4 space-y-4 animate-fade-in">
+              {/* User Hero Banner */}
+              <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white rounded-3xl p-5 shadow-md shadow-pink-500/15 relative overflow-hidden">
+                <div className="relative z-10 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full backdrop-blur-xs">
+                      {t.dailyReset}
+                    </span>
+                    <h2 className="text-xl font-black mt-2">{t.welcome}, {userName}! 👋</h2>
+                    <p className="text-xs text-pink-100 mt-0.5">
+                      {isVip ? "👑 VIP Active Subscriber" : "🌱 Standard Holistic Member"}
+                    </p>
+                  </div>
+                  
+                  {/* Wellness Stars Badge */}
+                  <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-3 flex flex-col items-center justify-center shadow-xs min-w-[64px]">
+                    <span className="text-lg">⭐</span>
+                    <span className="text-sm font-black mt-0.5">{userStars}</span>
+                    <span className="text-[9px] uppercase font-bold text-white/80">Stars</span>
+                  </div>
+                </div>
+                <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+              </div>
+
+              {/* DAILY MOTIVATION PARAGRAPH */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-pink-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                <div className="flex items-center space-x-2.5 pb-2 border-b border-pink-50 dark:border-slate-800">
+                  <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 flex items-center justify-center text-sm font-bold">
+                    💡
+                  </div>
+                  <div>
+                    <h3 className="font-black text-xs text-slate-900 dark:text-slate-100">{t.dailyMotivationTitle}</h3>
+                    <p className="text-[10px] text-pink-600 dark:text-pink-400 font-semibold">Tena Mind-Body Harmony</p>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mt-3 italic font-medium">
+                  "{t.dailyMotivationText}"
+                </p>
+              </div>
+
+              {/* DAILY HABITS LIST */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3.5">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="font-black text-sm text-slate-900 dark:text-slate-100">{t.todayHabits}</h3>
+                    <p className="text-[11px] text-slate-400">Curated by Tena Holistic • Resets daily</p>
+                  </div>
+                  <span className="text-xs font-black text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950 px-3 py-1 rounded-full border border-pink-100 dark:border-pink-900">
+                    {completedHabits.length}/{DEFAULT_HABITS.length} {t.done}
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {DEFAULT_HABITS.map(habit => {
+                    const done = completedHabits.includes(habit.id);
+                    return (
+                      <div
+                        key={habit.id}
+                        onClick={() => toggleHabit(habit)}
+                        className={`p-3.5 rounded-2xl border transition flex items-center justify-between cursor-pointer active:scale-[0.99] ${
+                          done 
+                            ? 'bg-pink-50/80 dark:bg-pink-950/40 border-pink-300 dark:border-pink-800 text-pink-950 dark:text-pink-200' 
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="text-xl">{habit.icon}</span>
+                          <span className={`text-xs font-bold ${done ? 'line-through opacity-70' : ''}`}>
+                            {lang === 'am' ? habit.amText : habit.text}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-black text-amber-500">+{habit.xp} ⭐</span>
+                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition ${
+                            done ? 'bg-gradient-to-r from-pink-500 to-sky-500 text-white shadow-xs' : 'border-2 border-slate-300 dark:border-slate-600'
+                          }`}>
+                            {done ? '✓' : ''}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {completedHabits.length === DEFAULT_HABITS.length && (
+                  <div className="bg-gradient-to-r from-pink-500 to-sky-500 text-white rounded-2xl p-4 shadow-sm flex items-center justify-between animate-fade-in mt-3">
+                    <div className="flex items-center space-x-2.5">
+                      <span className="text-2xl animate-bounce-subtle">🎉</span>
+                      <div>
+                        <h4 className="text-xs font-black">{t.allHabitsCelebration}</h4>
+                        <p className="text-[10px] text-pink-100">{t.allHabitsSub}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </main>
+          )}
+
+          {/* TAB 2: CHALLENGES & RANKED LEADERBOARD (Animated "Coming Soon") */}
+          {activeTab === 'challenges' && (
+            <main className="p-4 space-y-5 animate-fade-in flex flex-col items-center justify-center min-h-[70vh] text-center">
+              <div className="relative my-4">
+                <div className="absolute -inset-6 bg-gradient-to-r from-pink-500 via-purple-500 to-sky-400 rounded-full blur-2xl opacity-40 animate-pulse-slow"></div>
+                <div className="relative w-32 h-32 rounded-3xl bg-gradient-to-tr from-pink-500 via-purple-500 to-sky-400 p-1 shadow-2xl glow-pink-blue flex items-center justify-center">
+                  <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[22px] flex flex-col items-center justify-center">
+                    <span className="text-5xl animate-float-icon">🏆</span>
+                  </div>
+                </div>
+                <span className="absolute -top-2 -right-2 text-2xl animate-bounce-subtle">✨</span>
+                <span className="absolute -bottom-2 -left-2 text-2xl animate-bounce-subtle" style={{ animationDelay: '1s' }}>⭐</span>
+              </div>
+
+              <div className="space-y-2 max-w-xs">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-100 dark:bg-pink-950/80 text-pink-700 dark:text-pink-300 rounded-full text-xs font-black">
+                  <span className="w-2 h-2 rounded-full bg-pink-500 animate-ping"></span>
+                  <span>{t.comingSoonTitle}</span>
+                </div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">
+                  Challenges & Ranked Leaderboard
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  {t.comingSoonChallengesDesc}
+                </p>
+                <p className="text-[11px] text-pink-600 dark:text-pink-400 font-medium">
+                  {t.comingSoonRankedDesc}
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setHasNotifiedComingSoon(true);
+                  if (typeof confetti === 'function') {
+                    confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 }, colors: ['#ec4899', '#38bdf8'] });
+                  }
+                }}
+                disabled={hasNotifiedComingSoon}
+                className="w-full max-w-sm py-3.5 bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 hover:opacity-95 text-white font-black text-xs rounded-2xl shadow-md shadow-pink-500/20 active:scale-95 transition disabled:opacity-75"
+              >
+                {hasNotifiedComingSoon ? t.notifiedThanks : t.notifyMe}
+              </button>
+            </main>
+          )}
+
+          {/* TAB 3: HEALTH HUB (With Featured VIP Carousel & Category Dropdown) */}
+          {activeTab === 'hub' && (
+            <main className="p-4 space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-black">{t.guidesTitle}</h2>
+                  <p className="text-xs text-slate-500">{t.guidesSub}</p>
+                </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={handleOpenNewArticle}
+                      className="bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 hover:opacity-95 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-xs active:scale-95 transition"
+                    >
+                      <span>➕</span>
+                      <span>{t.newPostBtn}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAdminTab('articles');
+                        setShowAdminPanel(true);
+                      }}
+                      className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold px-2.5 py-1.5 rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                      title="Admin Manager"
+                    >
+                      ⚙️
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* FEATURED VIP SECRET PROTOCOLS CAROUSEL */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base animate-pulse">⭐</span>
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                        {t.featuredProtocols}
+                      </h3>
+                      <p className="text-[10px] text-slate-400">{t.featuredSub}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        if (carouselRef.current) carouselRef.current.scrollBy({ left: -260, behavior: 'smooth' });
+                      }}
+                      className="w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs flex items-center justify-center shadow-xs active:scale-95 transition hover:bg-pink-50 dark:hover:bg-slate-700"
+                      title="Previous"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (carouselRef.current) carouselRef.current.scrollBy({ left: 260, behavior: 'smooth' });
+                      }}
+                      className="w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs flex items-center justify-center shadow-xs active:scale-95 transition hover:bg-pink-50 dark:hover:bg-slate-700"
+                      title="Next"
+                    >
+                      ›
+                    </button>
+                  </div>
+                </div>
+
+                <div 
+                  ref={carouselRef}
+                  className="flex gap-3.5 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory scrollbar-none -mx-4 px-4"
+                >
+                  {articles
+                    .filter(a => a.isFeatured || a.isVipOnly || a.category === "VIP Secret Protocol")
+                    .map(article => {
+                      const isSecret = article.isVipOnly;
+                      const isLocked = isSecret && !isVip;
+
+                      return (
+                        <div
+                          key={`carousel_${article.id}`}
+                          className="w-[280px] sm:w-[310px] shrink-0 snap-start bg-slate-900 text-white rounded-3xl overflow-hidden border border-pink-500/30 dark:border-pink-500/40 shadow-lg relative group transition hover:scale-[1.01]"
+                        >
+                          <div className="relative h-36 bg-slate-800 overflow-hidden">
+                            <img
+                              src={article.thumbnail || "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80"}
+                              alt={article.title}
+                              className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+
+                            {/* Floating Badges */}
+                            <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 items-center">
+                              <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white shadow-md">
+                                {article.badge || (isSecret ? "💎 VIP Secret" : "✨ Featured")}
+                              </span>
+                              {article.isComingSoon && (
+                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-xs">
+                                  Coming Soon
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Admin Quick Action Controls */}
+                            {isAdmin && (
+                              <div className="absolute top-2.5 right-2.5 flex items-center gap-1 z-10">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditArticle(article);
+                                  }}
+                                  className="px-2 py-1 bg-sky-600/90 hover:bg-sky-600 text-white text-[9px] font-black rounded-lg backdrop-blur-md shadow-xs active:scale-90 transition"
+                                  title="Edit Article"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteArticle(article.id);
+                                  }}
+                                  className="px-2 py-1 bg-rose-600/90 hover:bg-rose-600 text-white text-[9px] font-black rounded-lg backdrop-blur-md shadow-xs active:scale-90 transition"
+                                  title="Delete Article"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            )}
+
+                            <div className="absolute bottom-2 left-3 right-3">
+                              <span className="text-[9px] text-pink-300 font-bold uppercase tracking-wider">
+                                {article.category}
+                              </span>
+                              <h4 className="font-black text-xs text-white leading-snug line-clamp-2 mt-0.5">
+                                {article.title}
+                              </h4>
+                            </div>
+                          </div>
+
+                          <div className="p-3.5 space-y-2.5">
+                            <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed font-normal">
+                              {article.snippet}
+                            </p>
+
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-800/80">
+                              <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                <span>⏱️</span>
+                                <span>{article.readTime}</span>
+                              </span>
+
+                              {isLocked ? (
+                                <button
+                                  onClick={() => setShowVipModal(true)}
+                                  className="px-3 py-1 bg-gradient-to-r from-pink-500 to-sky-500 text-white text-[11px] font-black rounded-xl shadow-xs active:scale-95 transition flex items-center gap-1"
+                                >
+                                  <span>🔒 Unlock VIP</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setSelectedArticle(article)}
+                                  className="px-3 py-1 bg-white/10 hover:bg-white/20 text-pink-300 hover:text-white text-[11px] font-black rounded-xl transition"
+                                >
+                                  📖 Read →
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Search Bar & Dropdown Filter with Icon Only */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search remedies, foods, VIP secrets..."
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-9 pr-7 py-2.5 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none shadow-xs font-medium"
+                  />
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-400">🔍</span>
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-2.5 text-slate-400 text-xs font-black">✕</button>
+                  )}
+                </div>
+
+                {/* CATEGORY FILTER DROPDOWN (Icon-Only Trigger Button) */}
+                <div className="relative shrink-0" ref={dropdownRef}>
+                  <button
+                    onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
+                    className={`h-10 px-3.5 rounded-2xl border flex items-center gap-1.5 transition active:scale-95 ${
+                      selectedCat !== "All"
+                        ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white border-transparent shadow-xs"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 shadow-xs"
+                    }`}
+                    title="Filter Categories"
+                  >
+                    <span className="text-base">{CATEGORY_ICONS[selectedCat] || "🏷️"}</span>
+                    <span className="text-xs font-bold">{selectedCat === "All" ? "Filter" : selectedCat}</span>
+                    <span className="text-[10px]">▼</span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isCatDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-40 animate-fade-in divide-y divide-slate-100 dark:divide-slate-800">
+                      <div className="px-3 py-1.5 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                        {t.filterCategories}
+                      </div>
+                      <div className="py-1">
+                        {categoriesList.map(cat => (
+                          <button
+                            key={cat.id}
+                            onClick={() => {
+                              setSelectedCat(cat.id);
+                              setIsCatDropdownOpen(false);
+                            }}
+                            className={`w-full px-3.5 py-2.5 text-left text-xs font-bold flex items-center justify-between transition ${
+                              selectedCat === cat.id
+                                ? 'bg-pink-50 dark:bg-pink-950/60 text-pink-600 dark:text-pink-300'
+                                : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm">{cat.icon}</span>
+                              <span>{cat.label}</span>
+                            </div>
+                            {selectedCat === cat.id && <span className="text-pink-600 font-black">✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ARTICLE CARDS LIST */}
+              <div className="space-y-4">
+                {articles
+                  .filter(a => {
+                    const matchCat = selectedCat === "All" || a.category === selectedCat;
+                    if (!matchCat) return false;
+                    if (!searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase();
+                    return (
+                      (a.title && a.title.toLowerCase().includes(q)) ||
+                      (a.snippet && a.snippet.toLowerCase().includes(q)) ||
+                      (a.category && a.category.toLowerCase().includes(q))
+                    );
+                  })
+                  .map(article => {
+                    const isSecret = article.isVipOnly;
+                    const isLocked = isSecret && !isVip;
+
+                    return (
+                      <div key={article.id} className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-sm transition hover:shadow-md relative">
+                        <div className="relative h-44 bg-slate-100 dark:bg-slate-800">
+                          {article.thumbnail ? (
+                            <img src={article.thumbnail} alt={article.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl">🌸</div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
+                                isSecret 
+                                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-xs' 
+                                  : 'bg-white/25 backdrop-blur-md text-white'
+                              }`}>
+                                {isSecret ? '💎 VIP Secret Protocol' : article.category}
+                              </span>
+                              {article.isComingSoon && (
+                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/90 text-white">
+                                  Coming Soon
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="font-black text-sm text-white mt-1 leading-snug">{article.title}</h3>
+                          </div>
+
+                          {/* Admin Edit & Delete Overlay */}
+                          {isAdmin && (
+                            <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                              <button
+                                onClick={() => handleEditArticle(article)}
+                                className="px-2.5 py-1 bg-sky-600 text-white text-[10px] font-black rounded-xl backdrop-blur-md shadow-sm active:scale-90 transition flex items-center gap-1"
+                              >
+                                <span>✏️</span>
+                                <span>{t.editArticle}</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteArticle(article.id)}
+                                className="px-2.5 py-1 bg-rose-600 text-white text-[10px] font-black rounded-xl backdrop-blur-md shadow-sm active:scale-90 transition flex items-center gap-1"
+                              >
+                                <span>🗑️</span>
+                                <span>{t.deleteArticle}</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="p-4 space-y-3">
+                          <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                            {article.snippet}
+                          </p>
+
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <span className="text-[11px] text-slate-400">⏱️ {article.readTime}</span>
+                            
+                            {isLocked ? (
+                              <button
+                                onClick={() => setShowVipModal(true)}
+                                className="px-3.5 py-1.5 bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white text-xs font-black rounded-xl shadow-xs active:scale-95 transition flex items-center gap-1"
+                              >
+                                <span>🔒 Unlock VIP</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setSelectedArticle(article)}
+                                className="px-3.5 py-1.5 bg-pink-50 dark:bg-pink-950 text-pink-600 dark:text-pink-300 hover:bg-pink-100 text-xs font-black rounded-xl transition"
+                              >
+                                {t.readGuide} →
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </main>
+          )}
+
+          {/* TAB 4: STORE & DIGITAL HEALTH PRODUCTS */}
+          {activeTab === 'store' && (
+            <main className="p-4 space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-black">Tena Holistic Store</h2>
+                  <p className="text-xs text-slate-500">Organic remedies & wellness guides. Direct wallet purchases.</p>
+                </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={handleOpenNewProduct}
+                      className="bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 hover:opacity-95 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-xs active:scale-95 transition"
+                    >
+                      <span>➕</span>
+                      <span>{t.newProductBtn}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAdminTab('store');
+                        setShowAdminPanel(true);
+                      }}
+                      className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold px-2.5 py-1.5 rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                      title="Admin Manager"
+                    >
+                      ⚙️
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Digital E-Books Section */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">📚 Digital Guides & Handbooks</h3>
+                {DIGITAL_BOOKS.map(book => {
+                  const isOwned = unlockedBooks.includes(book.id);
+                  return (
+                    <div key={book.id} className="bg-white/90 dark:bg-slate-900/90 rounded-3xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm flex gap-3.5 items-center">
+                      <img src={book.cover} alt={book.title} className="w-20 h-24 object-cover rounded-2xl shrink-0" />
+                      <div className="space-y-1.5 flex-1">
+                        <span className="text-[10px] font-black text-pink-600 bg-pink-50 dark:bg-pink-950 px-2 py-0.5 rounded-full">{book.category}</span>
+                        <h4 className="text-xs font-black text-slate-900 dark:text-white leading-snug">{book.title}</h4>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-xs font-black text-slate-700 dark:text-slate-200">
+                            {formatPrice(book.etbPrice, book.usdPrice)}
+                          </span>
+                          {isOwned ? (
+                            <button
+                              onClick={() => setSelectedBook(book)}
+                              className="px-3.5 py-1.5 bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-300 text-xs font-black rounded-xl"
+                            >
+                              📖 Read Now
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleWalletBookPurchase(book)}
+                              className="px-3.5 py-1.5 bg-gradient-to-r from-pink-500 to-sky-500 text-white text-xs font-black rounded-xl active:scale-95 transition flex items-center gap-1 shadow-xs"
+                            >
+                              <span>👛</span>
+                              <span>Unlock</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Physical Organic Products */}
+              <div className="space-y-3 pt-2">
+                <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">🌿 Organic Supplements</h3>
+                <div className="grid grid-cols-1 gap-3.5">
+                  {products.map(product => (
+                    <div key={product.id} className="bg-white/90 dark:bg-slate-900/90 rounded-3xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm flex gap-3.5 items-center relative">
+                      <img src={product.image} alt={product.title} className="w-20 h-20 object-cover rounded-2xl shrink-0" />
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-sky-600 bg-sky-50 dark:bg-sky-950 px-2 py-0.5 rounded-full">{product.category}</span>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleEditProduct(product)}
+                                className="px-2 py-0.5 bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-300 text-[10px] font-bold rounded-lg"
+                                title="Edit Product"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(product.id)}
+                                className="px-2 py-0.5 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300 text-[10px] font-bold rounded-lg"
+                                title="Delete Product"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <h4 className="text-xs font-black text-slate-900 dark:text-white leading-snug">{product.title}</h4>
+                        <p className="text-[10px] text-slate-500 line-clamp-1">{product.description}</p>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                            {formatPrice(product.etbPrice, product.usdPrice)}
+                          </span>
+                          <button
+                            onClick={() => {
+                              setOrderingProduct(product);
+                              setInsufficientBalanceNotice(false);
+                            }}
+                            className="px-3.5 py-1.5 bg-gradient-to-r from-pink-500 to-sky-500 text-white text-xs font-black rounded-xl active:scale-95 transition flex items-center gap-1 shadow-xs"
+                          >
+                            <span>👛</span>
+                            <span>{t.orderBtn}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </main>
+          )}
+
+          {/* TAB 5: SETTINGS & VIP PROFILE (All-in-One Settings Hub) */}
+          {activeTab === 'settings' && (
+            <main className="p-4 space-y-4 animate-fade-in">
+              <div>
+                <h2 className="text-base font-black">{t.settingsTitle}</h2>
+                <p className="text-xs text-slate-500">Manage VIP access, wallet balance, preferences, and orders.</p>
+              </div>
+
+              {/* USER PROFILE CARD */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-pink-100 dark:border-slate-800 shadow-sm flex items-center space-x-3.5">
+                <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 p-1 border-2 border-pink-400 dark:border-sky-400 shadow-sm flex items-center justify-center shrink-0">
+                  <TenaBrandLogo size={46} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-black text-sm text-slate-900 dark:text-white">{userName}</h3>
+                    {isVip && (
+                      <span className="bg-gradient-to-r from-pink-500 to-sky-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                        VIP 👑
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400">@{userUsername || "member"} • ID: {userId.slice(0, 10)}</p>
+                  <p className="text-[11px] font-bold text-amber-500 mt-1">⭐ {userStars} Stars</p>
+                </div>
+              </div>
+
+              {/* WALLET BALANCE CARD (Moved to Settings with clean minimalist SVG eye icon & Deposit button) */}
+              <div className="bg-gradient-to-r from-pink-500/90 via-purple-600/90 to-sky-600/90 text-white rounded-3xl p-5 shadow-lg shadow-pink-500/15 backdrop-blur-xl border border-white/20 relative overflow-hidden space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg">👛</span>
+                    <span className="text-xs font-black uppercase tracking-wider text-pink-100">{t.walletBalance}</span>
+                  </div>
+                  {/* Clean Minimalist SVG Eye / EyeOff Toggle Button */}
+                  <button
+                    onClick={toggleBalanceVisibility}
+                    className="p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition active:scale-90 flex items-center justify-center"
+                    title={isBalanceHidden ? t.showBalance : t.hideBalance}
+                    aria-label={isBalanceHidden ? t.showBalance : t.hideBalance}
+                  >
+                    {isBalanceHidden ? (
+                      <EyeOffIcon className="w-4 h-4 text-white" />
+                    ) : (
+                      <EyeIcon className="w-4 h-4 text-white" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-baseline justify-between pt-0.5">
+                  <div>
+                    <h3 className="text-2xl font-black tracking-tight">
+                      {isBalanceHidden ? "••••••••" : displayWalletBalance}
+                    </h3>
+                    <p className="text-[10px] text-pink-100 font-medium mt-0.5">
+                      {isBalanceHidden ? "Balance hidden" : `Active currency: ${currency}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowTopUpModal(true)}
+                    className="px-4 py-2 bg-white text-pink-600 font-black text-xs rounded-2xl shadow-sm hover:bg-pink-50 active:scale-95 transition flex items-center gap-1.5"
+                  >
+                    <span>➕</span>
+                    <span>{t.deposit}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* VIP MEMBERSHIP STATUS CARD */}
+              <div className="bg-gradient-to-br from-pink-500 via-purple-600 to-sky-600 text-white rounded-3xl p-5 shadow-md shadow-pink-500/20 relative overflow-hidden space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2.5">
+                    <span className="text-2xl">👑</span>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
+                        {t.vipStatusTitle}
+                      </span>
+                      <h3 className="text-base font-black mt-1">{isVip ? t.vipActive : t.vipInactive}</h3>
+                    </div>
+                  </div>
+                  {isVip && (
+                    <span className="text-xs font-black bg-white/25 px-2.5 py-1 rounded-xl">
+                      {vipDaysRemaining} Days Left
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-pink-100 leading-relaxed">
+                  {t.vipMonthlyDesc}
+                </p>
+
+                <div className="pt-1">
+                  <button
+                    onClick={() => setShowVipModal(true)}
+                    className="w-full py-2.5 bg-white text-pink-600 font-black text-xs rounded-2xl shadow-sm active:scale-95 transition"
+                  >
+                    {isVip ? t.renewVipBtn : t.unlockVipBtn}
+                  </button>
+                </div>
+              </div>
+
+              {/* SETTINGS OPTIONS LIST */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-2 border border-slate-200/80 dark:border-slate-800 shadow-sm divide-y divide-slate-100 dark:divide-slate-800">
+                
+                {/* Order History Direct Button */}
+                <button
+                  onClick={() => setShowOrderHistoryModal(true)}
+                  className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-2xl transition"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-lg">📦</span>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white">{t.orderHistoryBtn}</h4>
+                      <p className="text-[10px] text-slate-400">Track pending, approved, and purchased orders</p>
+                    </div>
+                  </div>
+                  <span className="text-slate-400 text-sm font-black">→</span>
+                </button>
+
+                {/* Sub-Page Button: Display & App Preferences (Theme, Language, Currency) */}
+                <button
+                  onClick={() => setShowPreferencesModal(true)}
+                  className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-2xl transition"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-lg">⚙️</span>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white">{t.preferencesBtn}</h4>
+                      <p className="text-[10px] text-slate-400">{t.preferencesSub}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-pink-50 dark:bg-slate-800 text-pink-600 dark:text-pink-400 border border-pink-100 dark:border-slate-700">
+                      {lang === 'en' ? 'EN' : 'አማ'} • {currency} • {darkMode ? '🌙' : '☀️'}
+                    </span>
+                    <span className="text-slate-400 text-sm font-black">→</span>
+                  </div>
+                </button>
+
+                {/* Contact Holistic Support */}
+                <div className="p-3.5 space-y-2">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-lg">💬</span>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white">{t.contactSupport}</h4>
+                      <p className="text-[10px] text-slate-400">Direct hotline, WhatsApp & Telegram help</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <a
+                      href="https://t.me/beki2_0"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2.5 bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-300 rounded-xl text-center text-xs font-bold border border-sky-100 dark:border-sky-900"
+                    >
+                      ✈️ Telegram Support
+                    </a>
+                    <a
+                      href="tel:0900000000"
+                      className="p-2.5 bg-pink-50 dark:bg-pink-950/60 text-pink-600 dark:text-pink-300 rounded-xl text-center text-xs font-bold border border-pink-100 dark:border-pink-900"
+                    >
+                      📞 +251 900 000 000
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </main>
+          )}
+
+          {/* ORDER HISTORY MODAL (Shows Pending, Approved, and Purchased Lists) */}
+          {showOrderHistoryModal && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
+                
+                {/* Modal Header */}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xl">📦</span>
+                    <div>
+                      <h3 className="font-black text-sm text-slate-900 dark:text-white">{t.orderHistoryTitle}</h3>
+                      <p className="text-[10px] text-slate-400">{t.orderHistorySub}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowOrderHistoryModal(false)} className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black">
+                    ✕
+                  </button>
+                </div>
+
+                {/* Filter Tabs (All, Pending, Approved, Purchased) */}
+                <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 flex gap-1.5 border-b border-slate-100 dark:border-slate-800">
+                  {[
+                    { id: 'all', label: t.allOrders },
+                    { id: 'pending', label: t.pendingOrders },
+                    { id: 'approved', label: t.approvedOrders },
+                    { id: 'purchased', label: t.purchasedOrders }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setOrderFilterTab(tab.id)}
+                      className={`px-2.5 py-1.5 rounded-xl text-[11px] font-black transition whitespace-nowrap ${
+                        orderFilterTab === tab.id
+                          ? 'bg-gradient-to-r from-pink-500 to-sky-500 text-white shadow-xs'
+                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Orders List Container */}
+                <div className="p-4 overflow-y-auto space-y-3 max-h-[55vh]">
+                  {orders.filter(o => orderFilterTab === 'all' || o.status === orderFilterTab).length === 0 ? (
+                    <div className="py-8 text-center text-slate-400 text-xs font-medium space-y-2">
+                      <span className="text-3xl block">📭</span>
+                      <p>{t.noOrders}</p>
+                    </div>
+                  ) : (
+                    orders
+                      .filter(o => orderFilterTab === 'all' || o.status === orderFilterTab)
+                      .map(order => (
+                        <div key={order.id} className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-mono font-black text-slate-400">#{order.id}</span>
+                            <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
+                              order.status === 'purchased'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                                : (order.status === 'approved'
+                                  ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
+                                  : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300')
+                            }`}>
+                              {order.status.toUpperCase()}
+                            </span>
+                          </div>
+
+                          <div>
+                            <h4 className="text-xs font-black text-slate-900 dark:text-white">{order.title}</h4>
+                            <p className="text-[10px] text-slate-400">{order.type} • {order.date}</p>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700">
+                            <span className="text-slate-500 font-medium">Method: {order.paymentMethod}</span>
+                            <span className="font-black text-pink-600 dark:text-pink-300">
+                              {order.currency === 'USD' ? `$${order.amount}` : `${order.amount} ETB`}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-2 rounded-xl text-[10px]">
+                            <span className="text-slate-400 truncate">Ref: {order.txnRef}</span>
+                            <button
+                              onClick={() => copyToClipboard(order.txnRef)}
+                              className="text-pink-600 dark:text-pink-300 font-bold shrink-0 ml-2"
+                            >
+                              {copyNotice === order.txnRef ? "Copied!" : "Copy"}
+                            </button>
+                          </div>
+
+                          {isAdmin && (
+                            <div className="flex gap-1 pt-1">
+                              <button
+                                onClick={() => handleUpdateOrderStatus(order.id, 'pending')}
+                                className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded-md"
+                              >
+                                Set Pending
+                              </button>
+                              <button
+                                onClick={() => handleUpdateOrderStatus(order.id, 'approved')}
+                                className="px-2 py-0.5 bg-sky-100 text-sky-800 text-[9px] font-bold rounded-md"
+                              >
+                                Set Approved
+                              </button>
+                              <button
+                                onClick={() => handleUpdateOrderStatus(order.id, 'purchased')}
+                                className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded-md"
+                              >
+                                Set Purchased
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                  )}
+                </div>
+
+                {/* Helpful status note */}
+                <div className="p-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 leading-relaxed">
+                  💡 {t.orderPendingHelp}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* VIP ACTIVATION MODAL (Wallet-Based Instant Checkout) */}
+          {showVipModal && (
+            <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-5 space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                <button
+                  onClick={() => {
+                    setShowVipModal(false);
+                    setVipInsufficientNotice(false);
+                  }}
+                  className="absolute right-4 top-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black"
+                >
+                  ✕
+                </button>
+
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-sky-400 flex items-center justify-center text-2xl text-white shadow-md">
+                    👑
+                  </div>
+                  <div>
+                    <h3 className="font-black text-base text-slate-900 dark:text-white">
+                      {isVip ? t.renewVipBtn : "Unlock VIP Membership"}
+                    </h3>
+                    <p className="text-xs text-pink-600 dark:text-pink-400 font-semibold">Monthly Secret Protocols & Video Hub</p>
+                  </div>
+                </div>
+
+                {/* Wallet Balance Status Banner */}
+                <div className="p-3 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-sky-500/10 dark:from-pink-950/30 dark:to-sky-950/30 rounded-2xl border border-pink-200/50 dark:border-pink-900/40 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base">👛</span>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-slate-400">{t.walletBalance}</p>
+                      <p className="text-xs font-black text-slate-900 dark:text-white">{displayWalletBalance}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowVipModal(false);
+                      setShowTopUpModal(true);
+                    }}
+                    className="px-2.5 py-1 bg-white dark:bg-slate-800 text-pink-600 dark:text-pink-400 font-bold text-[10px] rounded-xl border border-pink-200 dark:border-slate-700 shadow-xs hover:bg-pink-50 transition"
+                  >
+                    + {t.deposit}
+                  </button>
+                </div>
+
+                {/* VIP Membership Offer Card (Direct Wallet Unlock) */}
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-black uppercase text-pink-600 dark:text-pink-400">Monthly VIP Access</span>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white">Secret Protocols & Holistic Videos</h4>
+                    <p className="text-[10px] text-slate-400">Full 30-day unlimited VIP membership</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-black text-pink-600 dark:text-pink-300">
+                      {currency === 'USD' ? '$5.99 USD' : '350 ETB'}
+                    </span>
+                    <span className="block text-[9px] text-slate-400 font-bold">/ month</span>
+                  </div>
+                </div>
+
+                {/* Checkout Summary Card */}
+                {(() => {
+                  const currentPlan = VIP_PLANS[selectedVipPlan] || VIP_PLANS.monthly;
+                  const isSufficient = walletBalance >= currentPlan.etbPrice;
+                  const diffEtb = currentPlan.etbPrice - walletBalance;
+                  const diffUsd = (diffEtb / 50).toFixed(2);
+                  const remainingBalEtb = walletBalance - currentPlan.etbPrice;
+                  const remainingBalFormatted = currency === 'USD' ? `$${(remainingBalEtb / 50).toFixed(2)} USD` : `${remainingBalEtb.toLocaleString()} ETB`;
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs space-y-1.5">
+                        <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                          <span>Plan Cost:</span>
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            {currency === 'USD' ? `$${currentPlan.usdPrice} USD` : `${currentPlan.etbPrice} ETB`}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                          <span>Payment Source:</span>
+                          <span className="font-bold text-pink-600 dark:text-pink-400">👛 Wallet Balance</span>
+                        </div>
+                        <div className="border-t border-slate-200 dark:border-slate-700 pt-1.5 flex justify-between font-black">
+                          <span>{isSufficient ? "Remaining Balance:" : "Shortfall:"}</span>
+                          <span className={isSufficient ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}>
+                            {isSufficient ? remainingBalFormatted : `-${currency === 'USD' ? '$' + diffUsd + ' USD' : diffEtb + ' ETB'}`}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Insufficient balance notice & deposit redirect */}
+                      {(!isSufficient || vipInsufficientNotice) && (
+                        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-2xl text-xs space-y-2">
+                          <p className="text-[11px] font-bold text-amber-800 dark:text-amber-200">
+                            ⚠️ {t.insufficientWallet}. You need {currency === 'USD' ? `$${diffUsd} USD` : `${diffEtb} ETB`} more to unlock this VIP plan.
+                          </p>
+                          <button
+                            onClick={() => {
+                              setShowVipModal(false);
+                              setShowTopUpModal(true);
+                            }}
+                            className="w-full py-2 bg-gradient-to-r from-amber-500 to-pink-500 text-white text-xs font-black rounded-xl shadow-xs active:scale-95 transition"
+                          >
+                            ➕ {t.depositFunds} Now
+                          </button>
+                        </div>
+                      )}
+
+                      {/* VIP Success Message */}
+                      {vipPurchaseSuccess && (
+                        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-2xl text-center text-xs font-black text-emerald-700 dark:text-emerald-300 animate-bounce">
+                          🎉 VIP Membership Unlocked Successfully!
+                        </div>
+                      )}
+
+                      {/* Pay with Wallet Button */}
+                      {isSufficient && (
+                        <button
+                          onClick={handleActivateVipOrder}
+                          disabled={isSubmittingOrder || vipPurchaseSuccess}
+                          className="w-full py-3.5 bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white text-xs font-black rounded-2xl shadow-md shadow-pink-500/20 active:scale-95 transition flex items-center justify-center gap-2"
+                        >
+                          {isSubmittingOrder ? (
+                            <span>Activating VIP Access...</span>
+                          ) : vipPurchaseSuccess ? (
+                            <span>✓ VIP Activated!</span>
+                          ) : (
+                            <>
+                              <span>👛</span>
+                              <span>{t.payWithWallet}</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* DEPOSIT FUNDS MODAL (Add Funds to Wallet via Telebirr/CBE/PayPal) */}
+          {showTopUpModal && (
+            <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-5 space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                <button
+                  onClick={() => setShowTopUpModal(false)}
+                  className="absolute right-4 top-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black"
+                >
+                  ✕
+                </button>
+
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-sky-500 flex items-center justify-center text-2xl text-white shadow-md">
+                    👛
+                  </div>
+                  <div>
+                    <h3 className="font-black text-base text-slate-900 dark:text-white">{t.depositFunds}</h3>
+                    <p className="text-xs text-pink-600 dark:text-pink-400 font-semibold">Current Balance: {displayWalletBalance}</p>
+                  </div>
+                </div>
+
+                {/* Amount presets */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase text-slate-400">Select Deposit Amount</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(currency === 'USD' ? [5, 10, 25] : [200, 500, 1000]).map(amt => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setTopUpAmount(amt)}
+                        className={`p-2.5 rounded-2xl border text-xs font-black transition ${
+                          topUpAmount === amt
+                            ? 'bg-gradient-to-r from-pink-500 to-sky-500 text-white border-transparent shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        {currency === 'USD' ? `$${amt} USD` : `${amt} ETB`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Deposit Payment details */}
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl space-y-2 border border-slate-200 dark:border-slate-700 text-xs">
+                  <span className="text-[10px] font-black uppercase text-slate-400">Transfer Deposit To:</span>
+                  {currency === 'ETB' ? (
+                    <div className="space-y-1 text-slate-700 dark:text-slate-200 font-medium">
+                      <div className="flex justify-between items-center">
+                        <span>📱 Telebirr: <strong>+251 900 000 000</strong></span>
+                        <button onClick={() => copyToClipboard("+251 900 000 000")} className="text-pink-600 font-bold text-[10px]">Copy</button>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>🏦 CBE: <strong>1000289419201</strong></span>
+                        <button onClick={() => copyToClipboard("1000289419201")} className="text-pink-600 font-bold text-[10px]">Copy</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1 text-slate-700 dark:text-slate-200 font-medium">
+                      <div className="flex justify-between items-center">
+                        <span>🌐 PayPal: <strong>support@tena.health</strong></span>
+                        <button onClick={() => copyToClipboard("support@tena.health")} className="text-pink-600 font-bold text-[10px]">Copy</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Reference ID */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black text-slate-500">Transaction ID / Reference (Txn Ref)</label>
+                  <input
+                    type="text"
+                    value={topUpTxnRef}
+                    onChange={(e) => setTopUpTxnRef(e.target.value)}
+                    placeholder="e.g. FT2628109 or Bank Reference"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  onClick={handleTopUpWallet}
+                  disabled={isSubmittingTopUp}
+                  className="w-full py-3.5 bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white text-xs font-black rounded-2xl shadow-md shadow-pink-500/20 active:scale-95 transition"
+                >
+                  {isSubmittingTopUp ? "Processing Deposit..." : `Confirm & Deposit +${currency === 'USD' ? '$' + topUpAmount + ' USD' : topUpAmount + ' ETB'}`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* DEDICATED PREFERENCES & DISPLAY SUB-PAGE MODAL */}
+          {showPreferencesModal && (
+            <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
+                
+                {/* Header with Back Button */}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center space-x-2.5">
+                    <button
+                      onClick={() => setShowPreferencesModal(false)}
+                      className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center text-sm font-black active:scale-90 transition"
+                      aria-label="Back"
+                    >
+                      ←
+                    </button>
+                    <div>
+                      <h3 className="font-black text-sm text-slate-900 dark:text-white">{t.preferencesTitle}</h3>
+                      <p className="text-[10px] text-slate-400">{t.preferencesSub}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowPreferencesModal(false)}
+                    className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Preferences Form Body */}
+                <div className="p-4 space-y-4 overflow-y-auto">
+                  
+                  {/* 1. Theme Mode Section */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>🌓</span>
+                        <span>{t.themeOption}</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400">
+                        {darkMode ? t.darkModeLabel : t.lightModeLabel}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {/* Light Theme Card */}
+                      <button
+                        type="button"
+                        onClick={() => setDarkMode(false)}
+                        className={`p-3 rounded-2xl border text-left transition relative ${
+                          !darkMode
+                            ? 'bg-pink-50/70 border-pink-500 text-pink-900 ring-2 ring-pink-500/20'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-lg">☀️</span>
+                          {!darkMode && (
+                            <span className="w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[10px] font-black">✓</span>
+                          )}
+                        </div>
+                        <h4 className="text-xs font-black">{t.lightModeLabel}</h4>
+                        <p className="text-[10px] opacity-70 mt-0.5">Bright, energetic canvas</p>
+                      </button>
+
+                      {/* Dark Theme Card */}
+                      <button
+                        type="button"
+                        onClick={() => setDarkMode(true)}
+                        className={`p-3 rounded-2xl border text-left transition relative ${
+                          darkMode
+                            ? 'bg-slate-800 border-sky-400 text-white ring-2 ring-sky-400/20'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-lg">🌙</span>
+                          {darkMode && (
+                            <span className="w-4 h-4 rounded-full bg-sky-400 text-slate-900 flex items-center justify-center text-[10px] font-black">✓</span>
+                          )}
+                        </div>
+                        <h4 className="text-xs font-black">{t.darkModeLabel}</h4>
+                        <p className="text-[10px] opacity-70 mt-0.5">Eye-safe glassmorphic</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. App Language Section */}
+                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>🌐</span>
+                        <span>{t.languageOption}</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                        {lang === 'en' ? 'English' : 'አማርኛ'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {/* English Option */}
+                      <button
+                        type="button"
+                        onClick={() => setLang('en')}
+                        className={`p-3 rounded-2xl border text-left transition relative ${
+                          lang === 'en'
+                            ? 'bg-sky-50/70 dark:bg-sky-950/40 border-sky-500 text-sky-900 dark:text-sky-100 ring-2 ring-sky-500/20'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-lg">🇺🇸</span>
+                          {lang === 'en' && (
+                            <span className="w-4 h-4 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-black">✓</span>
+                          )}
+                        </div>
+                        <h4 className="text-xs font-black">English (US)</h4>
+                        <p className="text-[10px] opacity-70 mt-0.5">Default English layout</p>
+                      </button>
+
+                      {/* Amharic Option */}
+                      <button
+                        type="button"
+                        onClick={() => setLang('am')}
+                        className={`p-3 rounded-2xl border text-left transition relative ${
+                          lang === 'am'
+                            ? 'bg-pink-50/70 dark:bg-pink-950/40 border-pink-500 text-pink-900 dark:text-pink-100 ring-2 ring-pink-500/20'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-lg">🇪🇹</span>
+                          {lang === 'am' && (
+                            <span className="w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[10px] font-black">✓</span>
+                          )}
+                        </div>
+                        <h4 className="text-xs font-black">አማርኛ</h4>
+                        <p className="text-[10px] opacity-70 mt-0.5">ሙሉ የአማርኛ መመሪያዎች</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 3. Display Currency Section */}
+                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>💵</span>
+                        <span>{t.currencyOption}</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400">
+                        {currency}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {/* ETB Option */}
+                      <button
+                        type="button"
+                        onClick={() => setCurrency('ETB')}
+                        className={`p-3 rounded-2xl border text-left transition relative ${
+                          currency === 'ETB'
+                            ? 'bg-gradient-to-br from-pink-500/10 to-sky-500/10 border-pink-500 text-slate-900 dark:text-white ring-2 ring-pink-500/20'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm font-black bg-pink-100 dark:bg-pink-900/50 text-pink-600 px-2 py-0.5 rounded-lg">ETB</span>
+                          {currency === 'ETB' && (
+                            <span className="w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[10px] font-black">✓</span>
+                          )}
+                        </div>
+                        <h4 className="text-xs font-black">Ethiopian Birr</h4>
+                        <p className="text-[10px] opacity-70 mt-0.5">Telebirr & CBE pricing</p>
+                      </button>
+
+                      {/* USD Option */}
+                      <button
+                        type="button"
+                        onClick={() => setCurrency('USD')}
+                        className={`p-3 rounded-2xl border text-left transition relative ${
+                          currency === 'USD'
+                            ? 'bg-gradient-to-br from-sky-500/10 to-purple-500/10 border-sky-500 text-slate-900 dark:text-white ring-2 ring-sky-500/20'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm font-black bg-sky-100 dark:bg-sky-900/50 text-sky-600 px-2 py-0.5 rounded-lg">$ USD</span>
+                          {currency === 'USD' && (
+                            <span className="w-4 h-4 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-black">✓</span>
+                          )}
+                        </div>
+                        <h4 className="text-xs font-black">US Dollar ($)</h4>
+                        <p className="text-[10px] opacity-70 mt-0.5">International & PayPal</p>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Footer Save / Return Button */}
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                  <button
+                    onClick={() => setShowPreferencesModal(false)}
+                    className="w-full py-3 bg-gradient-to-r from-pink-500 to-sky-500 text-white text-xs font-black rounded-2xl shadow-md shadow-pink-500/15 active:scale-95 transition"
+                  >
+                    ✓ {lang === 'en' ? 'Save & Close' : 'ተጠናቋል (አስቀምጥ)'}
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* STORE PRODUCT WALLET PURCHASE MODAL */}
+          {orderingProduct && (
+            <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-5 space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl relative">
+                <button
+                  onClick={() => {
+                    setOrderingProduct(null);
+                    setInsufficientBalanceNotice(false);
+                  }}
+                  className="absolute right-4 top-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black"
+                >
+                  ✕
+                </button>
+
+                <div className="flex items-center space-x-3">
+                  <img src={orderingProduct.image} alt={orderingProduct.title} className="w-16 h-16 object-cover rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs" />
+                  <div>
+                    <h3 className="font-black text-sm text-slate-900 dark:text-white leading-snug">{orderingProduct.title}</h3>
+                    <p className="text-xs font-black text-pink-600 dark:text-pink-400 mt-0.5">
+                      {formatPrice(orderingProduct.etbPrice, orderingProduct.usdPrice)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Wallet Balance Check */}
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-medium">Your Wallet Balance:</span>
+                    <span className="font-black text-slate-900 dark:text-white">{displayWalletBalance}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-medium">Item Cost:</span>
+                    <span className="font-black text-pink-600">{formatPrice(orderingProduct.etbPrice, orderingProduct.usdPrice)}</span>
+                  </div>
+                  {walletBalance >= orderingProduct.etbPrice && (
+                    <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-200/60 dark:border-slate-700 text-slate-400">
+                      <span>Remaining Balance:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {currency === 'USD' 
+                          ? `$${((walletBalance - orderingProduct.etbPrice) / 50).toFixed(2)} USD`
+                          : `${Number(walletBalance - orderingProduct.etbPrice).toLocaleString()} ETB`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Insufficient Balance Notice */}
+                {(walletBalance < orderingProduct.etbPrice || insufficientBalanceNotice) ? (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                      ⚠️ <strong>{t.insufficientWallet}</strong>. You need {formatPrice(orderingProduct.etbPrice, orderingProduct.usdPrice)} to complete this order. Please top up your wallet first.
+                    </div>
+                    <button
+                      onClick={() => {
+                        setOrderingProduct(null);
+                        setShowTopUpModal(true);
+                      }}
+                      className="w-full py-3.5 bg-gradient-to-r from-pink-500 to-sky-500 text-white text-xs font-black rounded-2xl shadow-md shadow-pink-500/20 active:scale-95 transition flex items-center justify-center gap-1.5"
+                    >
+                      <span>➕</span>
+                      <span>{t.topUpWallet} Now</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleWalletProductPurchase}
+                    className="w-full py-3.5 bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white text-xs font-black rounded-2xl shadow-md shadow-pink-500/20 active:scale-95 transition flex items-center justify-center gap-1.5"
+                  >
+                    <span>👛</span>
+                    <span>{productOrderSuccess ? "✓ Purchase Successful!" : "Pay with Wallet Balance"}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ARTICLE READER MODAL */}
+          {selectedArticle && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span className="text-xs font-black text-pink-600 bg-pink-50 dark:bg-pink-950 px-2.5 py-1 rounded-full">
+                    {selectedArticle.category}
+                  </span>
+                  <button onClick={() => setSelectedArticle(null)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black">
+                    ✕
+                  </button>
+                </div>
+                <div className="p-5 overflow-y-auto space-y-4">
+                  <h2 className="text-base font-black text-slate-900 dark:text-white leading-snug">{selectedArticle.title}</h2>
+                  <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-medium">
+                    {selectedArticle.content}
+                  </div>
+                  {selectedArticle.youtubeUrl && (
+                    <a
+                      href={selectedArticle.youtubeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block p-3 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 rounded-2xl text-center text-xs font-bold border border-red-100 dark:border-red-900"
+                    >
+                      ▶️ Watch Video Masterclass
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* E-BOOK READER MODAL */}
+          {selectedBook && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span className="text-xs font-black text-sky-600 bg-sky-50 dark:bg-sky-950 px-2.5 py-1 rounded-full">
+                    📖 Digital Reader
+                  </span>
+                  <button onClick={() => setSelectedBook(null)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black">
+                    ✕
+                  </button>
+                </div>
+                <div className="p-5 overflow-y-auto space-y-4">
+                  <h2 className="text-base font-black text-slate-900 dark:text-white leading-snug">{selectedBook.title}</h2>
+                  {selectedBook.chapters.map((ch, idx) => (
+                    <div key={idx} className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-1.5 border border-slate-200/70 dark:border-slate-700">
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white">{ch.title}</h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{ch.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ARTICLE CREATE & EDIT MODAL */}
+          {isArticleModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xl">📝</span>
+                    <div>
+                      <h3 className="font-black text-sm text-slate-900 dark:text-white">
+                        {articles.some(a => a.id === articleForm.id) ? t.editArticle : t.newPostBtn}
+                      </h3>
+                      <p className="text-[10px] text-slate-400">Health Hub & VIP Secret Protocol Manager</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setIsArticleModalOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black">
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveArticle} className="p-4 overflow-y-auto space-y-3.5 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Post Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={articleForm.title}
+                      onChange={e => setArticleForm({ ...articleForm, title: e.target.value })}
+                      placeholder="e.g. 7-Day Cellular Fasting & Liver Cleansing"
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white font-semibold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Category</label>
+                      <select
+                        value={articleForm.category}
+                        onChange={e => setArticleForm({ ...articleForm, category: e.target.value })}
+                        className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white"
+                      >
+                        <option value="VIP Secret Protocol">VIP Secret Protocol</option>
+                        <option value="Cancer Care">Cancer Care</option>
+                        <option value="Diabetes">Diabetes</option>
+                        <option value="Weight Loss">Weight Loss</option>
+                        <option value="Heart Health">Heart Health</option>
+                        <option value="Herbs & Nutrition">Herbs & Nutrition</option>
+                        <option value="Mental Wellness">Mental Wellness</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Read Time</label>
+                      <input
+                        type="text"
+                        value={articleForm.readTime}
+                        onChange={e => setArticleForm({ ...articleForm, readTime: e.target.value })}
+                        placeholder="e.g. 6 min"
+                        className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Carousel Badge</label>
+                      <input
+                        type="text"
+                        value={articleForm.badge}
+                        onChange={e => setArticleForm({ ...articleForm, badge: e.target.value })}
+                        placeholder="e.g. 🔥 Trending VIP"
+                        className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Video Link (YouTube)</label>
+                      <input
+                        type="url"
+                        value={articleForm.youtubeUrl}
+                        onChange={e => setArticleForm({ ...articleForm, youtubeUrl: e.target.value })}
+                        placeholder="https://youtube.com/watch?v=..."
+                        className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Cover Image URL</label>
+                    <input
+                      type="url"
+                      value={articleForm.thumbnail}
+                      onChange={e => setArticleForm({ ...articleForm, thumbnail: e.target.value })}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white font-mono text-[11px]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Summary / Snippet</label>
+                    <textarea
+                      rows={2}
+                      value={articleForm.snippet}
+                      onChange={e => setArticleForm({ ...articleForm, snippet: e.target.value })}
+                      placeholder="Short teaser shown in cards and carousels..."
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Full Protocol / Guide Content</label>
+                    <textarea
+                      rows={6}
+                      value={articleForm.content}
+                      onChange={e => setArticleForm({ ...articleForm, content: e.target.value })}
+                      placeholder="Complete health instructions, steps, meal preparations..."
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white font-mono text-[11px]"
+                    />
+                  </div>
+
+                  {/* Toggles */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="font-black text-slate-800 dark:text-slate-200">💎 VIP Only Access</span>
+                      <input
+                        type="checkbox"
+                        checked={articleForm.isVipOnly}
+                        onChange={e => setArticleForm({ ...articleForm, isVipOnly: e.target.checked })}
+                        className="w-4 h-4 text-pink-600 rounded"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="font-black text-slate-800 dark:text-slate-200">⭐ Highlight in Top Carousel</span>
+                      <input
+                        type="checkbox"
+                        checked={articleForm.isFeatured}
+                        onChange={e => setArticleForm({ ...articleForm, isFeatured: e.target.checked })}
+                        className="w-4 h-4 text-pink-600 rounded"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="font-black text-slate-800 dark:text-slate-200">⏳ Mark as Coming Soon</span>
+                      <input
+                        type="checkbox"
+                        checked={articleForm.isComingSoon}
+                        onChange={e => setArticleForm({ ...articleForm, isComingSoon: e.target.checked })}
+                        className="w-4 h-4 text-pink-600 rounded"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="pt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsArticleModalOpen(false)}
+                      className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black rounded-xl"
+                    >
+                      {t.cancelBtn}
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-3 bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white font-black rounded-xl shadow-md"
+                    >
+                      {t.saveChanges}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* STORE PRODUCT CREATE & EDIT MODAL */}
+          {isProductModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xl">🛍️</span>
+                    <div>
+                      <h3 className="font-black text-sm text-slate-900 dark:text-white">
+                        {products.some(p => p.id === productForm.id) ? t.editProduct : t.newProductBtn}
+                      </h3>
+                      <p className="text-[10px] text-slate-400">Holistic Store Inventory Manager</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setIsProductModalOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black">
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveProduct} className="p-4 overflow-y-auto space-y-3.5 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Product Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={productForm.title}
+                      onChange={e => setProductForm({ ...productForm, title: e.target.value })}
+                      placeholder="e.g. Ethiopian Black Seed Oil (250ml)"
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Category</label>
+                    <select
+                      value={productForm.category}
+                      onChange={e => setProductForm({ ...productForm, category: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white"
+                    >
+                      <option value="Herbs & Nutrition">Herbs & Nutrition</option>
+                      <option value="Supplements">Supplements</option>
+                      <option value="Wellness Teas">Wellness Teas</option>
+                      <option value="Essential Oils">Essential Oils</option>
+                      <option value="Holistic Remedies">Holistic Remedies</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Price (ETB) *</label>
+                      <input
+                        type="number"
+                        required
+                        value={productForm.etbPrice}
+                        onChange={e => setProductForm({ ...productForm, etbPrice: Number(e.target.value) })}
+                        placeholder="450"
+                        className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Price (USD) *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={productForm.usdPrice}
+                        onChange={e => setProductForm({ ...productForm, usdPrice: Number(e.target.value) })}
+                        placeholder="8.99"
+                        className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Image URL</label>
+                    <input
+                      type="url"
+                      value={productForm.image}
+                      onChange={e => setProductForm({ ...productForm, image: e.target.value })}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white font-mono text-[11px]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-400 mb-1">Product Description</label>
+                    <textarea
+                      rows={3}
+                      value={productForm.description}
+                      onChange={e => setProductForm({ ...productForm, description: e.target.value })}
+                      placeholder="Benefits, ingredients, usage instructions..."
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsProductModalOpen(false)}
+                      className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black rounded-xl"
+                    >
+                      {t.cancelBtn}
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-3 bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white font-black rounded-xl shadow-md"
+                    >
+                      {t.saveChanges}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MASTER ADMIN CONTENT MANAGER PANEL */}
+          {showAdminPanel && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xl">👑</span>
+                    <div>
+                      <h3 className="font-black text-sm text-slate-900 dark:text-white">Admin Management Hub</h3>
+                      <p className="text-[10px] text-slate-400">Content, Inventory & Customer Orders</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowAdminPanel(false)}
+                    className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-xs font-black"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Admin Tab Switcher */}
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-950 flex gap-1.5 border-b border-slate-100 dark:border-slate-800">
+                  <button
+                    onClick={() => setAdminTab('articles')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1 ${
+                      adminTab === 'articles'
+                        ? 'bg-gradient-to-r from-pink-500 to-sky-500 text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
+                    }`}
+                  >
+                    <span>📝</span>
+                    <span>Posts ({articles.length})</span>
+                  </button>
+                  <button
+                    onClick={() => setAdminTab('store')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1 ${
+                      adminTab === 'store'
+                        ? 'bg-gradient-to-r from-pink-500 to-sky-500 text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
+                    }`}
+                  >
+                    <span>🛍️</span>
+                    <span>Store ({products.length})</span>
+                  </button>
+                  <button
+                    onClick={() => setAdminTab('orders')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1 ${
+                      adminTab === 'orders'
+                        ? 'bg-gradient-to-r from-pink-500 to-sky-500 text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
+                    }`}
+                  >
+                    <span>📦</span>
+                    <span>Orders ({orders.length})</span>
+                  </button>
+                </div>
+
+                {/* Admin Content Area */}
+                <div className="p-4 overflow-y-auto space-y-3 max-h-[60vh]">
+                  {/* TAB 1: HEALTH HUB ARTICLES */}
+                  {adminTab === 'articles' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-slate-400">Health Hub & VIP Protocols</span>
+                        <button
+                          onClick={handleOpenNewArticle}
+                          className="px-3 py-1 bg-gradient-to-r from-pink-500 to-sky-500 text-white font-black text-xs rounded-xl shadow-xs active:scale-95 transition"
+                        >
+                          + {t.newPostBtn}
+                        </button>
+                      </div>
+
+                      {articles.map(art => (
+                        <div key={art.id} className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5">
+                          <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+                            <img src={art.thumbnail || "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200"} alt="" className="w-12 h-12 object-cover rounded-xl shrink-0" />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1">
+                                {art.isVipOnly && <span className="text-[8px] bg-pink-500 text-white font-black px-1.5 py-0.2 rounded">VIP</span>}
+                                {art.isFeatured && <span className="text-[8px] bg-amber-500 text-white font-black px-1.5 py-0.2 rounded">CAROUSEL</span>}
+                              </div>
+                              <h4 className="text-xs font-black text-slate-900 dark:text-white truncate">{art.title}</h4>
+                              <p className="text-[10px] text-slate-400">{art.category} • {art.readTime}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => handleEditArticle(art)}
+                              className="p-1.5 bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-300 font-bold rounded-lg text-xs"
+                              title="Edit"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleDeleteArticle(art.id)}
+                              className="p-1.5 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300 font-bold rounded-lg text-xs"
+                              title="Delete"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* TAB 2: STORE PRODUCTS */}
+                  {adminTab === 'store' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-slate-400">Store Products</span>
+                        <button
+                          onClick={handleOpenNewProduct}
+                          className="px-3 py-1 bg-gradient-to-r from-pink-500 to-sky-500 text-white font-black text-xs rounded-xl shadow-xs active:scale-95 transition"
+                        >
+                          + {t.newProductBtn}
+                        </button>
+                      </div>
+
+                      {products.map(prod => (
+                        <div key={prod.id} className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5">
+                          <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+                            <img src={prod.image} alt="" className="w-12 h-12 object-cover rounded-xl shrink-0" />
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-black text-slate-900 dark:text-white truncate">{prod.title}</h4>
+                              <p className="text-[10px] text-slate-400">{prod.category}</p>
+                              <span className="text-xs font-black text-pink-600 dark:text-pink-300">
+                                {formatPrice(prod.etbPrice, prod.usdPrice)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => handleEditProduct(prod)}
+                              className="p-1.5 bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-300 font-bold rounded-lg text-xs"
+                              title="Edit"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(prod.id)}
+                              className="p-1.5 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300 font-bold rounded-lg text-xs"
+                              title="Delete"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* TAB 3: CUSTOMER ORDERS & REVIEWS */}
+                  {adminTab === 'orders' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-slate-400">Order Subscriptions & Purchases</span>
+                        <button
+                          onClick={() => {
+                            setShowAdminPanel(false);
+                            setShowOrderHistoryModal(true);
+                          }}
+                          className="px-2.5 py-1 bg-pink-50 dark:bg-pink-950 text-pink-600 text-xs font-bold rounded-xl"
+                        >
+                          View Full History →
+                        </button>
+                      </div>
+
+                      {orders.map(order => (
+                        <div key={order.id} className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-mono font-black text-slate-400">#{order.id}</span>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                              order.status === 'purchased' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
+                              order.status === 'approved' ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                            }`}>
+                              {order.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white">{order.title}</h4>
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-slate-400">{order.paymentMethod} • {order.date}</span>
+                            <span className="font-black text-pink-600">{order.currency === 'USD' ? `$${order.amount}` : `${order.amount} ETB`}</span>
+                          </div>
+                          <div className="flex gap-1 pt-1 border-t border-slate-200 dark:border-slate-700">
+                            <button
+                              onClick={() => handleUpdateOrderStatus(order.id, 'pending')}
+                              className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded"
+                            >
+                              Pending
+                            </button>
+                            <button
+                              onClick={() => handleUpdateOrderStatus(order.id, 'approved')}
+                              className="px-2 py-0.5 bg-sky-100 text-sky-800 text-[9px] font-bold rounded"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleUpdateOrderStatus(order.id, 'purchased')}
+                              className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded"
+                            >
+                              Complete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* BOTTOM NAVIGATION BAR (Tracker | Challenges | Health Hub | Store | Settings) */}
+          <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-pink-100/70 dark:border-slate-800 px-2 py-2 flex items-center justify-around z-30 shadow-lg">
+            
+            <button
+              onClick={() => setActiveTab('tracker')}
+              className={`flex flex-col items-center py-1 px-3 rounded-2xl transition ${
+                activeTab === 'tracker' 
+                  ? 'text-pink-600 dark:text-pink-400 font-black' 
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+            >
+              <span className="text-xl">🌿</span>
+              <span className="text-[10px] mt-0.5">{t.tracker}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('challenges')}
+              className={`flex flex-col items-center py-1 px-3 rounded-2xl transition ${
+                activeTab === 'challenges' 
+                  ? 'text-pink-600 dark:text-pink-400 font-black' 
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+            >
+              <span className="text-xl">🏆</span>
+              <span className="text-[10px] mt-0.5">{t.challenges}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('hub')}
+              className={`flex flex-col items-center py-1 px-3 rounded-2xl transition ${
+                activeTab === 'hub' 
+                  ? 'text-pink-600 dark:text-pink-400 font-black' 
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+            >
+              <span className="text-xl">💡</span>
+              <span className="text-[10px] mt-0.5">{t.hub}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('store')}
+              className={`flex flex-col items-center py-1 px-3 rounded-2xl transition ${
+                activeTab === 'store' 
+                  ? 'text-pink-600 dark:text-pink-400 font-black' 
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+            >
+              <span className="text-xl">🛍️</span>
+              <span className="text-[10px] mt-0.5">{t.store}</span>
+            </button>
+
+            {/* SETTINGS TAB (Replaced VIP Profile tab) */}
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`flex flex-col items-center py-1 px-3 rounded-2xl transition ${
+                activeTab === 'settings' 
+                  ? 'text-pink-600 dark:text-pink-400 font-black' 
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+            >
+              <span className="text-xl">⚙️</span>
+              <span className="text-[10px] mt-0.5">{t.settings}</span>
+            </button>
+          </nav>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>

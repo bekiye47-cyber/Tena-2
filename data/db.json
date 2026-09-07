@@ -1,0 +1,124 @@
+{
+  "articles": [
+    {
+      "id": "vip_secret_1",
+      "category": "VIP Secret Protocol",
+      "title": "Ancient Herbal Cellular Longevity & Metabolic Secret",
+      "snippet": "A restricted holistic blueprint for cellular autophagy, deep anti-aging, and herbal infusions available only to VIP members.",
+      "isVipOnly": true,
+      "isFeatured": true,
+      "badge": "🔥 Trending VIP",
+      "isComingSoon": true,
+      "youtubeUrl": "",
+      "thumbnail": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80",
+      "readTime": "7 min",
+      "content": "### 💎 VIP Secret Health Protocol (Exclusive Access)\n*(This masterclass and accompanying private video protocol are curated exclusively for monthly VIP Subscribers and are releasing fully in the upcoming cycle.)*\n\n#### Core Principles of the VIP Secret Protocol:\n1. **Targeted Fasting Windows**: Synergizing 16:8 circadian fasting with mountain herb infusions.\n2. **Cellular Autophagy Activation**: Eliminating damaged senescent cells with concentrated polyphenols.\n3. **Mitochondrial Vitality**: Traditional Ethiopian botanical tonics that boost cellular ATP production without jittery stimulants.\n\n*Stay tuned as full downloadable audio-guides and video recipes unlock for VIP subscribers.*"
+    },
+    {
+      "id": "vip_secret_2",
+      "category": "VIP Secret Protocol",
+      "title": "Deep Cellular Autophagy & 48-Hour Botanical Detox",
+      "snippet": "Step-by-step masterclass on activating stem cell renewal and digestive resting pathways through organic herbal decoctions.",
+      "isVipOnly": true,
+      "isFeatured": true,
+      "badge": "✨ New Release",
+      "isComingSoon": false,
+      "youtubeUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "thumbnail": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80",
+      "readTime": "8 min",
+      "content": "### 💎 48-Hour Botanical Detox & Stem Cell Renewal\n*(Exclusive Masterclass for VIP Members)*\n\n#### The 3-Phase Botanical Cleanse:\n1. **Phase 1 (Preparation)**: Eliminating inflammatory nightshades and loading gut microbiome with prebiotic Teff extract and lukewarm ginger tea.\n2. **Phase 2 (Autophagy Window)**: 48-hour fasting supported by cold-brewed rosemary and mountain moringa broth to preserve electrolyte balance.\n3. **Phase 3 (Microbiome Re-inoculation)**: Breaking fast with raw fermented flax jelly and steamed bitter greens.\n\n*Benefits: Rapid abdominal de-bloating, stabilized morning glucose, and heightened mental clarity.*"
+    },
+    {
+      "id": "vip_secret_3",
+      "category": "VIP Secret Protocol",
+      "title": "Circadian Hormone Optimization & REM Sleep Protocol",
+      "snippet": "Reverse cortisol spikes, stabilize thyroid signaling, and double deep slow-wave restorative sleep naturally.",
+      "isVipOnly": true,
+      "isFeatured": true,
+      "badge": "⭐ VIP Masterclass",
+      "isComingSoon": false,
+      "youtubeUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "thumbnail": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&auto=format&fit=crop&q=80",
+      "readTime": "6 min",
+      "content": "### 💎 Circadian Alignment & Neuro-Endocrine Reset\n*(VIP Exclusive Protocol)*\n\n#### Key Hormonal Reset Levers:\n1. **Morning Lux Exposure**: 10 minutes of direct morning sunlight within 30 minutes of waking to set cortisol peaks correctly.\n2. **Evening Melatonin Preservation**: Ceasing blue light exposure 90 minutes before bed and drinking warm chamomile with pure Ethiopian raw honey.\n3. **Magnesium & Herbal Glycinate**: Synergistic minerals that relax autonomic nervous tension and induce deep delta brainwaves."
+    },
+    {
+      "id": "1",
+      "category": "Cancer Care",
+      "title": "Anti-Inflammatory Nutrition & Cellular Defense",
+      "snippet": "Antioxidant-rich Ethiopian herbs, garlic, ginger, and habits to reduce systemic inflammation.",
+      "isVipOnly": false,
+      "isFeatured": true,
+      "badge": "🌿 Editor's Pick",
+      "youtubeUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "thumbnail": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80",
+      "readTime": "5 min",
+      "content": "### Holistic Anti-Inflammatory Principles\n1. **Antioxidant Superfoods**: Incorporate fresh ginger, turmeric, moringa, and raw garlic into your weekly meals.\n2. **Eliminate Ultra-Processed Foods**: Avoid refined seed oils, artificial sweeteners, and excess sugars.\n3. **Gut Health**: Fermented foods nourish gut bacteria, which govern over 70% of the immune system."
+    },
+    {
+      "id": "2",
+      "category": "Diabetes",
+      "title": "Natural Blood Sugar Stabilization & Insulin Health",
+      "snippet": "How whole grains like Teff, fiber, and intermittent fasting prevent insulin spikes.",
+      "isVipOnly": false,
+      "isFeatured": false,
+      "youtubeUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "thumbnail": "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=600&auto=format&fit=crop&q=80",
+      "readTime": "4 min",
+      "content": "### Managing Insulin Sensitivity Naturally\n1. **Low Glycemic Whole Grains**: Teff and legumes release carbohydrates slowly, preventing insulin spikes.\n2. **Cinnamon & Fenugreek (Abish)**: Traditional herbal remedies that aid glucose uptake into cells.\n3. **Post-Meal Walking**: A 15-minute walk right after meals helps muscles absorb glucose naturally."
+    }
+  ],
+  "products": [
+    {
+      "id": "p1",
+      "title": "Organic Moringa Leaf Powder (250g)",
+      "etbPrice": 450,
+      "usdPrice": 8,
+      "category": "Herbs & Nutrition",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80",
+      "description": "Pure powdered moringa leaves rich in iron, antioxidants, and essential plant vitamins."
+    },
+    {
+      "id": "p2",
+      "title": "Pure Raw Ethiopian Forest Honey (500g)",
+      "etbPrice": 650,
+      "usdPrice": 12,
+      "category": "Herbs & Nutrition",
+      "image": "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&auto=format&fit=crop&q=80",
+      "description": "100% natural raw honey with powerful antimicrobial and throat-soothing benefits."
+    },
+    {
+      "id": "p3",
+      "title": "Tena Herbal Detox Tea Blend (30 Bags)",
+      "etbPrice": 380,
+      "usdPrice": 7,
+      "category": "Herbs & Nutrition",
+      "image": "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80",
+      "description": "A soothing blend of ginger, rosemary, moringa, and lemongrass for daily digestive balance."
+    }
+  ],
+  "orders": [
+    {
+      "id": "ORD-9421",
+      "title": "VIP Monthly Membership",
+      "type": "VIP Subscription",
+      "amount": 350,
+      "currency": "ETB",
+      "status": "purchased",
+      "date": "9/4/2026",
+      "paymentMethod": "Telebirr",
+      "txnRef": "FT2623912093"
+    },
+    {
+      "id": "ORD-8812",
+      "title": "Organic Moringa Leaf Powder (250g)",
+      "type": "Physical Product",
+      "amount": 450,
+      "currency": "ETB",
+      "status": "approved",
+      "date": "9/6/2026",
+      "paymentMethod": "CBE Bank",
+      "txnRef": "CBE-9940128"
+    }
+  ]
+}
